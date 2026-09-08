@@ -79,6 +79,7 @@ static class Program
         while (validResolver.TryConsume(out var consumed)) consumedEvents.Add(consumed);
         Check("resolver queues complete result in FIFO order", consumedEvents.Count == expectedEvents.Count && consumedEvents.Select(item => item.EventType).SequenceEqual(expectedEvents.Select(item => item.EventType)));
         Check("resolver replay records committed turn", validResolver.Replay.Inputs.Count == 1 && validResolver.Replay.Summaries.Count == 1 && validResolver.Replay.Summaries[0].TurnId == 1);
+        Check("replay verifier reproduces committed swap", ReplayVerifier.Verify(validConfig, validResolver.Replay).IsMatch);
 
         var invalidResolver = new TurnResolver(Board(new[] { "RBGYP", "GBRYR", "YPGGB", "BRYGP", "GYPRB" }, validConfig));
         var invalidBefore = invalidResolver.Board.Snapshot();
@@ -94,6 +95,7 @@ static class Program
         var toolEventCount = 0;
         while (toolResolver.TryConsume(out _)) toolEventCount++;
         Check("resolver event queue drains after tool presentation", toolEventCount == toolResult.Events.Count && toolResolver.Events.Count == 0);
+        Check("replay verifier reproduces area tool", ReplayVerifier.Verify(toolConfig, toolResolver.Replay).IsMatch);
 
         var recordingRules = new RecordingRulePipeline();
         var injectedResolver = new TurnResolver(new BoardModel(validConfig, new SeededRandom(validConfig.Seed)), recordingRules);
