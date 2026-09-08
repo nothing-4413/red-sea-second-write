@@ -68,7 +68,7 @@ static class Program
         var resolver = new TurnResolver(new BoardModel(config, new SeededRandom(11)));
         Check("resolver owns event queue", resolver.Events.Count == 0 && (resolver.Replay.Seed == 11 || resolver.Replay.Seed == config.Seed));
         Check("goal system reads model", resolver.Goals.IsFailed(resolver.Board) == false);
-        Check("replay starts with snapshot", !string.IsNullOrEmpty(resolver.Replay.InitialSnapshot) && ReplayRecord.RuleVersion == "1.7");
+        Check("replay starts with snapshot and random cursors", !string.IsNullOrEmpty(resolver.Replay.InitialSnapshot) && resolver.Replay.RecordedRuleVersion == "1.7" && resolver.Replay.InitialRandomIndex > 0 && resolver.Replay.InitialRefillRandomIndex == 0 && resolver.Replay.InitialShuffleRandomIndex == 0 && resolver.Replay.IsCompatible("1.7"));
 
         var validConfig = new LevelConfig { Rows = 5, Columns = 5, Moves = 10, AreaToolCount = 2, Seed = 71, Obstacles = new List<ObstacleDefinition>() };
         var validResolver = new TurnResolver(Board(new[] { "RBGYP", "GRRBR", "YPGGB", "BRYGP", "GYPRB" }, validConfig));
@@ -90,7 +90,7 @@ static class Program
         var movesBeforeTool = toolResolver.Board.MovesRemaining;
         var toolResult = toolResolver.SubmitAreaTool(new CellPos(0, 0), 3);
         Check("resolver submits area tool without consuming move", toolResult.IsValid && toolResolver.Board.MovesRemaining == movesBeforeTool && toolResolver.Board.AreaToolsRemaining == 0);
-        Check("resolver queues area tool events and summary", toolResolver.Events.Count == toolResult.Events.Count && toolResolver.Replay.Summaries.Count == 1 && toolResult.Summary.RemainingAreaTools == 0);
+        Check("resolver queues area tool events and summary", toolResolver.Events.Count == toolResult.Events.Count && toolResolver.Replay.Inputs.Count == 1 && toolResolver.Replay.Inputs[0].Type == ReplayInputType.AreaTool && toolResolver.Replay.Summaries.Count == 1 && toolResult.Summary.RemainingAreaTools == 0);
         var toolEventCount = 0;
         while (toolResolver.TryConsume(out _)) toolEventCount++;
         Check("resolver event queue drains after tool presentation", toolEventCount == toolResult.Events.Count && toolResolver.Events.Count == 0);

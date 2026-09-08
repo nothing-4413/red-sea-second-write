@@ -15,7 +15,7 @@ namespace RedSea.Match3.Architecture
         public TurnResolver(BoardModel board, IRulePipeline rules = null)
         {
             Board = board; Rules = rules ?? new MvpRulePipelineAdapter(); Events = new EventQueue(board.Config.MaxEvents); Goals = new GoalSystem(); Scores = new ScoreSystem();
-            Replay = new ReplayRecord { Seed = board.Config.Seed, InitialSnapshot = board.Snapshot() };
+            Replay = new ReplayRecord { Seed = board.Config.Seed, InitialSnapshot = board.Snapshot(), InitialRandomIndex = board.InitialRandom.Index, InitialRefillRandomIndex = board.RefillRandom.Index, InitialShuffleRandomIndex = board.ShuffleRandom.Index };
         }
 
         public ResolveResult SubmitSwap(CellPos from, CellPos to, int turnId)
@@ -29,7 +29,7 @@ namespace RedSea.Match3.Architecture
         {
             var result = Rules.ResolveAreaTool(Board, center, turnId);
             if (!result.IsValid) return result;
-            Events.EnqueueRange(result.Events); Replay.Summaries.Add(result.Summary); return result;
+            Events.EnqueueRange(result.Events); Replay.Inputs.Add(ReplayInput.AreaTool(center)); Replay.Summaries.Add(result.Summary); return result;
         }
 
         public bool TryConsume(out ResolveEvent item) { return Events.TryDequeue(out item); }
