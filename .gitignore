@@ -5,6 +5,8 @@ Reference/
 # Generated delivery artifacts.
 Deliverables/screenshots/
 Demo/test-results/
+Demo/**/bin/
+Demo/**/obj/
 
 # Local tooling and OS metadata.
 node_modules/
