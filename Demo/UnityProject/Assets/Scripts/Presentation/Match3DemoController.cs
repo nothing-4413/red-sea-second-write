@@ -9,9 +9,9 @@ namespace RedSea.Match3.Presentation
 {
     public sealed class Match3DemoController : MonoBehaviour
     {
-        public LevelConfigAsset levelConfig; public BoardView boardView; public float eventDelay = 0.06f;
+        public LevelConfigAsset levelConfig; public BoardView boardView; public EffectPlayer effectPlayer;
         private BoardModel board; private TurnResolver resolver; private readonly TurnStateMachine stateMachine = new TurnStateMachine(); private CellPos? selected; private int turnId; private string toast = "点击两个相邻糖果开始交换"; private ResolveSummary lastSummary; private Font displayFont;
-        private void Awake() { if (boardView == null) boardView = FindObjectOfType<BoardView>(); displayFont = Resources.Load<Font>("Fonts/display"); stateMachine.StateChanged += state => Debug.Log("[Turn] " + state); Initialize(); }
+        private void Awake() { if (boardView == null) boardView = FindObjectOfType<BoardView>(); if (effectPlayer == null) effectPlayer = FindObjectOfType<EffectPlayer>(); if (effectPlayer == null) effectPlayer = new GameObject("EffectPlayer").AddComponent<EffectPlayer>(); displayFont = Resources.Load<Font>("Fonts/display"); stateMachine.StateChanged += state => Debug.Log("[Turn] " + state); Initialize(); }
         private void Initialize() { stateMachine.Reset(); var config = levelConfig == null ? new LevelConfig() : levelConfig.ToCore(); board = new BoardModel(config); resolver = new TurnResolver(board); boardView.Bind(board); }
         private void OnGUI()
         {
@@ -30,11 +30,13 @@ namespace RedSea.Match3.Presentation
             if (Event.current.type != EventType.MouseDown || Event.current.button != 0 || stateMachine.InputLocked) return; var hit = boardView.HitTest(Event.current.mousePosition); if (!hit.HasValue) return; var pos = hit.Value; if (board.Cell(pos).Obstacle != null) { toast = "障碍物不可交换"; return; }
             if (!selected.HasValue) { selected = pos; stateMachine.Select(); toast = "已选择 " + pos + "，请选择相邻糖果"; return; } if (selected.Value == pos) { selected = null; stateMachine.ReturnToIdle(); toast = "已取消选择"; return; } if (!SwapValidator.IsAdjacent(selected.Value, pos)) { selected = pos; toast = "已改选 " + pos + "（必须点击上下左右相邻格）"; return; } SubmitSwap(selected.Value, pos);
         }
-        private void SubmitSwap(CellPos from, CellPos to) { stateMachine.BeginResolve(); var result = resolver.SubmitSwap(from, to, ++turnId); selected = null; if (!result.IsValid) { stateMachine.ReturnToIdle(); toast = "无效交换：已完整回滚，步数与随机流不变"; return; } lastSummary = result.Summary; stateMachine.BeginAnimation(); StartCoroutine(ConsumeEvents()); }
-        private IEnumerator ConsumeEvents() { while (resolver.TryConsume(out var item)) { yield return new WaitForSeconds(eventDelay); Debug.Log("[Event] " + item.EventType + " turn=" + item.TurnId + " depth=" + item.ChainDepth); } stateMachine.BeginRefill(); stateMachine.CheckChain(); yield return null; if (board.MovesRemaining <= 0) stateMachine.Finish(GameState.Lose); else if (GoalProgress() >= board.Config.GoalCount) stateMachine.Finish(GameState.Win); else stateMachine.ReturnToIdle(); toast = "棋盘稳定，输入已解锁"; }
-        private void UseAreaTool() { if (board.AreaToolsRemaining <= 0 || stateMachine.InputLocked) { toast = "道具不可用"; return; } var center = selected ?? new CellPos(board.Config.Rows / 2, board.Config.Columns / 2); stateMachine.Enter(GameState.Resolving); var result = resolver.SubmitAreaTool(center, ++turnId); if (!result.IsValid) { stateMachine.ReturnToIdle(); toast = "道具目标无效"; return; } lastSummary = result.Summary; stateMachine.BeginAnimation(); StartCoroutine(ConsumeEvents()); }
+        private void SubmitSwap(CellPos from, CellPos to) { stateMachine.BeginResolve(); var result = resolver.SubmitSwap(from, to, ++turnId); selected = null; if (!result.IsValid) { stateMachine.ReturnToIdle(); toast = "无效交换：已完整回滚，步数与随机流不变"; return; } lastSummary = result.Summary; stateMachine.BeginAnimation(); ConsumeEvents(); }
+        private void ConsumeEvents() { effectPlayer.Play(resolver, boardView, OnEventsCompleted, OnEventsTimedOut); }
+        private void OnEventsCompleted() { stateMachine.BeginRefill(); stateMachine.CheckChain(); var endState = resolver.EvaluateEndState(); if (endState == GameState.Win || endState == GameState.Lose) stateMachine.Finish(endState); else stateMachine.ReturnToIdle(); toast = "棋盘稳定，输入已解锁"; }
+        private void OnEventsTimedOut(ErrorSnapshot error) { var endState = resolver.EvaluateEndState(); if (endState == GameState.Win || endState == GameState.Lose) stateMachine.Finish(endState); else stateMachine.ReturnToIdle(); toast = "表现播放超时，已同步逻辑棋盘（turn=" + error.TurnId + ")"; }
+        private void UseAreaTool() { if (board.AreaToolsRemaining <= 0 || stateMachine.InputLocked) { toast = "道具不可用"; return; } var center = selected ?? new CellPos(board.Config.Rows / 2, board.Config.Columns / 2); stateMachine.Enter(GameState.Resolving); var result = resolver.SubmitAreaTool(center, ++turnId); if (!result.IsValid) { stateMachine.ReturnToIdle(); toast = "道具目标无效"; return; } lastSummary = result.Summary; stateMachine.BeginAnimation(); ConsumeEvents(); }
         private int GoalProgress() { return board == null ? 0 : board.ClearedByColor[board.Config.GoalColor]; }
-        private void Restart() { StopAllCoroutines(); selected = null; lastSummary = null; Initialize(); toast = "已重开，固定 seed=" + board.Config.Seed; }
+        private void Restart() { StopAllCoroutines(); if (effectPlayer != null) effectPlayer.StopPlayback(); selected = null; lastSummary = null; Initialize(); toast = "已重开，固定 seed=" + board.Config.Seed; }
         private IEnumerator Replay() { Restart(); yield return new WaitForSeconds(0.2f); if (resolver.TryFindLegalMove(out var from, out var to)) SubmitSwap(from, to); else toast = "回放失败：规则层未找到合法交换"; }
     }
 }

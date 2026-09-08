@@ -19,13 +19,14 @@ RuleContracts.cs 定义 IRulePipeline 契约和默认适配器；TurnResolver �
 - `Assets/Scripts/Core/Rules/MvpRulePipeline.cs`：MVP 唯一规则结算入口，编排交换/范围道具、消除、障碍物伤害、下落、补充、连锁和 `ResolveSummary`。
 - `Assets/Scripts/Core/Match3Core.cs` 中的 `ResolveSystem`：兼容遗留入口，已标记 `Obsolete`；新代码不得直接调用。
 - `Assets/Scripts/Flow/TurnStateMachine.cs`：Idle → Selecting → Resolving → Animating → Refilling → CheckingChain → Idle，统一输入锁。
-- `Assets/Scripts/Presentation/Match3DemoController.cs`：提交命令、消费 FIFO 事件、更新状态，不直接推导规则。
-- `Assets/Scripts/Presentation/BoardView.cs`：只读取 BoardModel，并将逻辑格映射到资源表现。
+- `Assets/Scripts/Presentation/Match3DemoController.cs`：提交命令、启动表现播放、更新状态，不直接消费事件或推导规则。
+- `Assets/Scripts/Presentation/EffectPlayer.cs`：表现事件队列的唯一消费者，按 FIFO 和配置时长顺序播放，并在超时后产生诊断回调。
+- `Assets/Scripts/Presentation/BoardView.cs`：只读取 BoardModel，将逻辑格映射到资源表现，并应用播放器发出的事件提示。
 - `Assets/Scripts/Config/LevelConfigAsset.cs`：ScriptableObject 关卡配置入口。
 
 ## 规则状态
 
-规则主流程固定为：Input → TurnStateMachine → TurnResolver → SwapValidator → MvpRulePipeline → ShuffleSystem（无合法移动时）→ EventQueue → Presentation → Goal/Score → Idle/Win/Lose。
+规则主流程固定为：Input → TurnStateMachine → TurnResolver → SwapValidator → MvpRulePipeline → ShuffleSystem（无合法移动时）→ EventQueue → EffectPlayer（FIFO）→ BoardView → Goal/Score → Idle/Win/Lose。
 
 ArchitectureTests 还验证了 TurnResolver 的有效/非法交换提交、FIFO 事件入队与消费、回放摘要记录，以及范围道具不消耗步数。
 

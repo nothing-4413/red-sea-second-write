@@ -9,8 +9,10 @@ namespace RedSea.Match3.Presentation
         {
             if (Object.FindObjectOfType<Match3DemoController>() != null) return;
             var board = new GameObject("BoardView").AddComponent<BoardView>();
+            var effects = new GameObject("EffectPlayer").AddComponent<EffectPlayer>();
             var controller = new GameObject("Match3DemoController").AddComponent<Match3DemoController>();
             controller.boardView = board;
+            controller.effectPlayer = effects;
         }
     }
 }

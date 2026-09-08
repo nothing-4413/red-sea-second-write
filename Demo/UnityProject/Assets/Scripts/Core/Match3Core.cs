@@ -37,6 +37,7 @@ namespace RedSea.Match3.Core
         public PieceColor[] Colors = { PieceColor.Red, PieceColor.Blue, PieceColor.Green, PieceColor.Yellow, PieceColor.Purple };
         public PieceColor GoalColor = PieceColor.Red; public int GoalCount = 18;
         public int MaxChainDepth = 20, MaxEvents = 500, MaxShuffleAttempts = 8, MaxInitialGenerationAttempts = 100;
+        public float EventDurationSeconds = 0.06f, MaxTurnWaitSeconds = 10f;
         public bool EnableRocket, EnableBomb, EnableFlyingBomb, EnableColorBomb, EnableSpecialCombo, EnableShuffle = true;
         public List<ObstacleDefinition> Obstacles = new List<ObstacleDefinition> { new ObstacleDefinition(3, 4, 2), new ObstacleDefinition(5, 4, 1) };
         public bool IsInBounds(CellPos pos) { return pos.Row >= 0 && pos.Row < Rows && pos.Column >= 0 && pos.Column < Columns; }
@@ -48,13 +49,14 @@ namespace RedSea.Match3.Core
                 Colors = Colors == null ? null : Colors.ToArray(),
                 GoalColor = GoalColor, GoalCount = GoalCount,
                 MaxChainDepth = MaxChainDepth, MaxEvents = MaxEvents, MaxShuffleAttempts = MaxShuffleAttempts, MaxInitialGenerationAttempts = MaxInitialGenerationAttempts,
+                EventDurationSeconds = EventDurationSeconds, MaxTurnWaitSeconds = MaxTurnWaitSeconds,
                 EnableRocket = EnableRocket, EnableBomb = EnableBomb, EnableFlyingBomb = EnableFlyingBomb, EnableColorBomb = EnableColorBomb, EnableSpecialCombo = EnableSpecialCombo, EnableShuffle = EnableShuffle,
                 Obstacles = Obstacles == null ? null : Obstacles.Select(item => new ObstacleDefinition(item.Row, item.Column, item.Durability)).ToList()
             };
         }
         public void Validate()
         {
-            if (Rows <= 0 || Columns <= 0 || Colors == null || Colors.Length < 3 || Moves < 0 || MaxChainDepth <= 0 || MaxEvents <= 0 || MaxShuffleAttempts <= 0 || MaxInitialGenerationAttempts <= 0) throw new InvalidOperationException("Invalid LevelConfig dimensions, colors, moves or safety limits.");
+            if (Rows <= 0 || Columns <= 0 || Colors == null || Colors.Length < 3 || Moves < 0 || MaxChainDepth <= 0 || MaxEvents <= 0 || MaxShuffleAttempts <= 0 || MaxInitialGenerationAttempts <= 0 || EventDurationSeconds < 0 || MaxTurnWaitSeconds <= 0) throw new InvalidOperationException("Invalid LevelConfig dimensions, colors, moves or safety limits.");
             var seen = new HashSet<CellPos>(); foreach (var item in Obstacles) { var pos = new CellPos(item.Row, item.Column); if (!IsInBounds(pos) || item.Durability <= 0 || !seen.Add(pos)) throw new InvalidOperationException("Invalid obstacle definition."); }
         }
     }
@@ -112,7 +114,7 @@ namespace RedSea.Match3.Core
 
     public class ResolveEvent
     {
-        public ResolveEventType EventType; public int TurnId; public int ChainDepth; public int SourcePieceId; public CellPos? TargetCell; public List<CellPos> AffectedCells = new List<CellPos>();
+        public ResolveEventType EventType; public int TurnId; public int ChainDepth; public int SourcePieceId; public CellPos? TargetCell; public PieceColor? PieceColor; public int RemainingObstacleDurability = -1; public List<CellPos> AffectedCells = new List<CellPos>();
         public ResolveEvent(ResolveEventType type, int turnId, int chainDepth = 0) { EventType = type; TurnId = turnId; ChainDepth = chainDepth; }
     }
 

@@ -32,7 +32,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelConfig: {fileID: 11400000, guid: 4f9c3000000000000000000000000004, type: 2}
   boardView: {fileID: 1102}
-  eventDelay: 0.06
+  effectPlayer: {fileID: 1202}
 --- !u!1 &1100
 GameObject:
   m_ObjectHideFlags: 0
@@ -58,3 +58,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cellSize: 64
+--- !u!1 &1200
+GameObject:
+  m_ObjectHideFlags: 0
+  m_Name: EffectPlayer
+  m_Component:
+  - component: {fileID: 1201}
+  - component: {fileID: 1202}
+--- !u!4 &1201
+Transform:
+  m_ObjectHideFlags: 0
+  m_GameObject: {fileID: 1200}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+--- !u!114 &1202
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f9c3000000000000000000000000008, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:

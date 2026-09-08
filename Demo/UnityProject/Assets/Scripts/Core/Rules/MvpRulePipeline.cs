@@ -37,7 +37,7 @@ namespace RedSea.Match3.Core.Rules
             while (targetRow >= top)
             {
                 var target = new CellPos(targetRow, column); var piece = board.CreatePiece(board.Config.Colors[board.RefillRandom.Next(board.Config.Colors.Length)], target); board.Cells[targetRow, column].Piece = piece;
-                events.Add(new ResolveEvent(ResolveEventType.Refill, turnId) { SourcePieceId = piece.PieceId, TargetCell = target }); targetRow--;
+                events.Add(new ResolveEvent(ResolveEventType.Refill, turnId) { SourcePieceId = piece.PieceId, TargetCell = target, PieceColor = piece.Color }); targetRow--;
             }
         }
     }
@@ -99,7 +99,7 @@ namespace RedSea.Match3.Core.Rules
             foreach (var pos in obstacleCells.Distinct())
             {
                 var obstacle = board.Cell(pos).Obstacle; if (obstacle == null) continue; var isDestroyed = obstacle.Damage(1);
-                events.Add(new ResolveEvent(ResolveEventType.Damage, turnId, depth) { TargetCell = pos, AffectedCells = new List<CellPos> { pos } });
+                events.Add(new ResolveEvent(ResolveEventType.Damage, turnId, depth) { TargetCell = pos, RemainingObstacleDurability = obstacle.CurrentDurability, AffectedCells = new List<CellPos> { pos } });
                 if (isDestroyed) { board.Cell(pos).Obstacle = null; destroyed++; }
             }
         }
