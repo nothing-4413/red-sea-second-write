@@ -16,5 +16,6 @@ namespace RedSea.Match3.Flow
         public void CheckChain() { Enter(GameState.CheckingChain); }
         public void ReturnToIdle() { if (State != GameState.Win && State != GameState.Lose) Enter(GameState.Idle); }
         public void Finish(GameState result) { if (result == GameState.Win || result == GameState.Lose) Enter(result); }
+        public void Reset() { Enter(GameState.Idle); }
     }
 }
