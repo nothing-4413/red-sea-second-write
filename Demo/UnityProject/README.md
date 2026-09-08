@@ -21,6 +21,8 @@
 
 ## 规则状态
 
+规则主流程固定为：Input → TurnStateMachine → TurnResolver → SwapValidator → MvpRulePipeline → ShuffleSystem（无合法移动时）→ EventQueue → Presentation → Goal/Score → Idle/Win/Lose。
+
 MVP 开启普通三连、确定性补充、障碍物和 5×5 道具；Rocket/Bomb/FlyingBomb/ColorBomb/SpecialCombo 仅保留枚举和配置开关，默认关闭。
 
 规则主流程固定为：`Input → TurnStateMachine → TurnResolver → SwapValidator → MvpRulePipeline → EventQueue → Presentation → Goal/Score → Idle/Win/Lose`。

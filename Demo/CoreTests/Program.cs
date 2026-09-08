@@ -9,7 +9,7 @@ static class Test
     {
         config ??= new LevelConfig { Rows = rows.Length, Columns = rows[0].Length, Obstacles = new List<ObstacleDefinition>() };
         var board = new BoardModel(config, new SeededRandom(7));
-        for (var r = 0; r < rows.Length; r++) for (var c = 0; c < rows[r].Length; c++) board.Cells[r, c].Piece = rows[r][c] == '.' ? null : board.CreatePiece(Color(rows[r][c]), new CellPos(r, c));
+        for (var r = 0; r < rows.Length; r++) for (var c = 0; c < rows[r].Length; c++) board.Cells[r, c].Piece = rows[r][c] == '.' || rows[r][c] == 'X' ? null : board.CreatePiece(Color(rows[r][c]), new CellPos(r, c));
         return board;
     }
     static PieceColor Color(char c) => c == 'R' ? PieceColor.Red : c == 'B' ? PieceColor.Blue : c == 'G' ? PieceColor.Green : c == 'Y' ? PieceColor.Yellow : PieceColor.Purple;
@@ -31,6 +31,18 @@ static class Test
         var segmentConfig = new LevelConfig { Rows = 5, Columns = 5, Obstacles = new List<ObstacleDefinition> { new ObstacleDefinition(2, 2, 1) } }; var segmentBoard = Board(new[] { "RBGYP", "GBRYR", "YPGGB", "BRYGP", "GYPRB" }, segmentConfig); var upperId = segmentBoard.Cells[0, 2].Piece.PieceId; segmentBoard.Cells[3, 2].Piece = null; segmentBoard.Cells[4, 2].Piece = null; var segmentEvents = new List<ResolveEvent>(); GravitySystem.Apply(segmentBoard, segmentEvents, 9); Check("obstacle remains a gravity boundary", segmentBoard.Cells[2, 2].Obstacle != null && segmentBoard.Cells[0, 2].Piece.PieceId == upperId);
 
         segmentBoard.AreaToolsRemaining = 0; var invalidToolResult = MvpRulePipeline.ResolveAreaTool(segmentBoard, new CellPos(0, 0), 10); Check("invalid tool has no inventory side effect", !invalidToolResult.IsValid && segmentBoard.AreaToolsRemaining == 0);
+        var shuffleConfig = new LevelConfig { Rows = 5, Columns = 5, Moves = 10, AreaToolCount = 2, Seed = 91, MaxShuffleAttempts = 2, Obstacles = new List<ObstacleDefinition> { new ObstacleDefinition(2, 2, 1) } };
+        var shuffleBoard = Board(new[] { "RBGYP", "BGYPR", "GYXRB", "YPRBG", "PRBGY" }, shuffleConfig);
+        var obstacleBefore = shuffleBoard.Cells[2, 2].Obstacle.Clone();
+        var movesBefore = shuffleBoard.MovesRemaining; var toolsBefore = shuffleBoard.AreaToolsRemaining; var scoreBeforeShuffle = shuffleBoard.Score; var shuffleIndexBefore = shuffleBoard.ShuffleRandom.Index;
+        var shuffleEvents = new List<ResolveEvent>(); var shuffleResult = ShuffleSystem.TryShuffle(shuffleBoard, shuffleEvents, 11);
+        Check("shuffle resolves dead board", shuffleResult.IsShuffled && shuffleBoard.HasLegalMove() && MatchFinder.Find(shuffleBoard).Count == 0);
+        Check("shuffle keeps obstacle fixed", shuffleBoard.Cells[2, 2].Obstacle != null && shuffleBoard.Cells[2, 2].Obstacle.CurrentDurability == obstacleBefore.CurrentDurability);
+        Check("shuffle keeps turn state", shuffleBoard.MovesRemaining == movesBefore && shuffleBoard.AreaToolsRemaining == toolsBefore && shuffleBoard.Score == scoreBeforeShuffle);
+        Check("shuffle uses independent deterministic stream", shuffleBoard.ShuffleRandom.Index > shuffleIndexBefore && shuffleBoard.RefillRandom.Index == 0 && shuffleEvents.Count == 1 && shuffleEvents[0].EventType == ResolveEventType.Shuffle);
+        var shuffleBoardRepeat = Board(new[] { "RBGYP", "BGYPR", "GYXRB", "YPRBG", "PRBGY" }, shuffleConfig);
+        ShuffleSystem.TryShuffle(shuffleBoardRepeat, new List<ResolveEvent>(), 11);
+        Check("shuffle is deterministic", shuffleBoard.Snapshot() == shuffleBoardRepeat.Snapshot());
         Console.WriteLine($"ALL TESTS PASSED: {passed}");
     }
 }

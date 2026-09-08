@@ -77,6 +77,10 @@ namespace RedSea.Match3.Core.Rules
                 ClearLayer(board, matches, AdjacentObstacles(board, matches), events, turnId, depth, ref destroyed); GravitySystem.Apply(board, events, turnId); clearLayers++; depth++;
                 if (events.Count > board.Config.MaxEvents) { before.Restore(board); throw new InvalidOperationException("Rule error: event queue limit exceeded."); }
             }
+            if (board.Config.EnableShuffle && !board.HasLegalMove())
+            {
+                ShuffleSystem.TryShuffle(board, events, turnId);
+            }
             if (events.Count > board.Config.MaxEvents) { before.Restore(board); throw new InvalidOperationException("Rule error: event queue limit exceeded."); }
             return new ResolveResult { IsValid = true, Events = events, Summary = Summary(board, turnId, board.Score - scoreBefore, clearLayers, destroyed) };
         }
