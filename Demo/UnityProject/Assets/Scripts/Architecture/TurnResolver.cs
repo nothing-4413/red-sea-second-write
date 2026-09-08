@@ -11,6 +11,7 @@ namespace RedSea.Match3.Architecture
         public ScoreSystem Scores { get; private set; }
         public ReplayRecord Replay { get; private set; }
         public IRulePipeline Rules { get; private set; }
+        public ErrorSnapshot LastError { get; private set; }
 
         public TurnResolver(BoardModel board, IRulePipeline rules = null)
         {
@@ -20,16 +21,38 @@ namespace RedSea.Match3.Architecture
 
         public ResolveResult SubmitSwap(CellPos from, CellPos to, int turnId)
         {
-            var result = Rules.ResolveSwap(Board, from, to, turnId);
-            if (!result.IsValid) return result;
-            Events.EnqueueRange(result.Events); Replay.Inputs.Add(new ReplayInput(from, to)); Replay.Summaries.Add(result.Summary); return result;
+            try
+            {
+                var result = Rules.ResolveSwap(Board, from, to, turnId);
+                if (!result.IsValid) return result;
+                Events.EnqueueRange(result.Events); Replay.Inputs.Add(new ReplayInput(from, to)); Replay.Summaries.Add(result.Summary); return result;
+            }
+            catch (System.Exception exception)
+            {
+                LastError = ErrorReporter.Capture(GameErrorType.Rule, exception.Message, Board, GameState.Resolving, turnId, Events.Count);
+                throw;
+            }
         }
 
         public ResolveResult SubmitAreaTool(CellPos center, int turnId)
         {
-            var result = Rules.ResolveAreaTool(Board, center, turnId);
-            if (!result.IsValid) return result;
-            Events.EnqueueRange(result.Events); Replay.Inputs.Add(ReplayInput.AreaTool(center)); Replay.Summaries.Add(result.Summary); return result;
+            try
+            {
+                var result = Rules.ResolveAreaTool(Board, center, turnId);
+                if (!result.IsValid) return result;
+                Events.EnqueueRange(result.Events); Replay.Inputs.Add(ReplayInput.AreaTool(center)); Replay.Summaries.Add(result.Summary); return result;
+            }
+            catch (System.Exception exception)
+            {
+                LastError = ErrorReporter.Capture(GameErrorType.Rule, exception.Message, Board, GameState.Resolving, turnId, Events.Count);
+                throw;
+            }
+        }
+
+        public ErrorSnapshot CaptureError(GameErrorType type, string message, GameState state, int turnId)
+        {
+            LastError = ErrorReporter.Capture(type, message, Board, state, turnId, Events.Count);
+            return LastError;
         }
 
         public bool TryConsume(out ResolveEvent item) { return Events.TryDequeue(out item); }

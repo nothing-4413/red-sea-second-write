@@ -102,6 +102,8 @@ static class Program
         injectedResolver.SubmitSwap(new CellPos(0, 0), new CellPos(0, 1), 4);
         injectedResolver.SubmitAreaTool(new CellPos(0, 0), 5);
         Check("resolver depends on injectable rule contract", recordingRules.SwapCalls == 1 && recordingRules.ToolCalls == 1 && injectedResolver.Events.Count == 2);
+        var error = injectedResolver.CaptureError(GameErrorType.StateMachine, "test timeout", GameState.Animating, 6);
+        Check("error snapshot captures turn state and board context", error.ErrorType == GameErrorType.StateMachine && error.State == GameState.Animating && error.TurnId == 6 && error.Seed == validConfig.Seed && error.BoardSnapshot == injectedResolver.Board.Snapshot());
         Console.WriteLine($"ARCHITECTURE CONTRACT TESTS PASSED: {passed}");
     }
 }

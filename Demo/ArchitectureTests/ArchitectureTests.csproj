@@ -11,6 +11,7 @@
     <Compile Include="..\UnityProject\Assets\Scripts\Core\Rules\RuleContracts.cs" Link="RuleContracts.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Core\Rules\ShuffleSystem.cs" Link="ShuffleSystem.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Architecture\EventQueue.cs" Link="EventQueue.cs" />
+    <Compile Include="..\UnityProject\Assets\Scripts\Architecture\ErrorSnapshot.cs" Link="ErrorSnapshot.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Architecture\GoalSystem.cs" Link="GoalSystem.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Architecture\ReplayRecord.cs" Link="ReplayRecord.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Architecture\ReplayVerifier.cs" Link="ReplayVerifier.cs" />
