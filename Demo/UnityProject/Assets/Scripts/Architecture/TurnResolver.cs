@@ -10,23 +10,24 @@ namespace RedSea.Match3.Architecture
         public GoalSystem Goals { get; private set; }
         public ScoreSystem Scores { get; private set; }
         public ReplayRecord Replay { get; private set; }
+        public IRulePipeline Rules { get; private set; }
 
-        public TurnResolver(BoardModel board)
+        public TurnResolver(BoardModel board, IRulePipeline rules = null)
         {
-            Board = board; Events = new EventQueue(board.Config.MaxEvents); Goals = new GoalSystem(); Scores = new ScoreSystem();
+            Board = board; Rules = rules ?? new MvpRulePipelineAdapter(); Events = new EventQueue(board.Config.MaxEvents); Goals = new GoalSystem(); Scores = new ScoreSystem();
             Replay = new ReplayRecord { Seed = board.Config.Seed, InitialSnapshot = board.Snapshot() };
         }
 
         public ResolveResult SubmitSwap(CellPos from, CellPos to, int turnId)
         {
-            var result = MvpRulePipeline.ResolveSwap(Board, from, to, turnId);
+            var result = Rules.ResolveSwap(Board, from, to, turnId);
             if (!result.IsValid) return result;
             Events.EnqueueRange(result.Events); Replay.Inputs.Add(new ReplayInput(from, to)); Replay.Summaries.Add(result.Summary); return result;
         }
 
         public ResolveResult SubmitAreaTool(CellPos center, int turnId)
         {
-            var result = MvpRulePipeline.ResolveAreaTool(Board, center, turnId);
+            var result = Rules.ResolveAreaTool(Board, center, turnId);
             if (!result.IsValid) return result;
             Events.EnqueueRange(result.Events); Replay.Summaries.Add(result.Summary); return result;
         }

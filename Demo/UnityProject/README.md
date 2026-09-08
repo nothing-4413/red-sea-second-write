@@ -11,6 +11,8 @@
 
 ## 代码边界
 
+RuleContracts.cs 定义 IRulePipeline 契约和默认适配器；TurnResolver 通过该边界依赖规则，不直接绑定静态实现。
+
 - `Assets/Scripts/Core/Match3Core.cs`：纯 C# 数据模型、匹配、交换验证、事务快照、消除、障碍物、下落、补充和摘要。
 - `Assets/Scripts/Core/Rules/MvpRulePipeline.cs`：MVP 唯一规则结算入口，编排交换/范围道具、消除、障碍物伤害、下落、补充、连锁和 `ResolveSummary`。
 - `Assets/Scripts/Core/Match3Core.cs` 中的 `ResolveSystem`：兼容遗留入口，已标记 `Obsolete`；新代码不得直接调用。
