@@ -1,0 +1,14 @@
+# Local source material retained for traceability but not shipped in the demo.
+Resources/Source/
+Reference/
+
+# Generated delivery artifacts.
+Deliverables/screenshots/
+Demo/test-results/
+
+# Local tooling and OS metadata.
+node_modules/
+__MACOSX/
+.DS_Store
+*.log
+
