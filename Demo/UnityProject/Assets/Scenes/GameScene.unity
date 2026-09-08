@@ -30,7 +30,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c6f918abc0d4a6c9a4b01b6a0e10010, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  levelConfig: {fileID: 0}
+  levelConfig: {fileID: 11400000, guid: 4f9c3000000000000000000000000004, type: 2}
   boardView: {fileID: 1102}
   eventDelay: 0.06
 --- !u!1 &1100

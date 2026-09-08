@@ -4,6 +4,8 @@
 
 ## 启动
 
+场景默认绑定 Assets/Config/LevelConfig_001.asset；棋盘尺寸、颜色、seed、目标、道具和安全上限从该资产转换到 Core。
+
 1. 使用 Unity 2022.3 LTS 打开 `Demo/UnityProject`。
 2. 打开 `Assets/Scenes/GameScene.unity` 并运行。
 3. 点击相邻糖果提交交换；无效交换会回滚且不扣步数。
