@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!29 &1
+SceneSettings:
+  m_ObjectHideFlags: 0
+  m_Fog: 0
+  serializedVersion: 2
+  m_EnvironmentLightingMode: 0
+--- !u!1 &1000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_Name: Match3DemoController
+  m_Component:
+  - component: {fileID: 1001}
+  - component: {fileID: 1002}
+--- !u!4 &1001
+Transform:
+  m_ObjectHideFlags: 0
+  m_GameObject: {fileID: 1000}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+--- !u!114 &1002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_GameObject: {fileID: 1000}
+  m_EditorClassIdentifier: RedSea.Match3.Presentation.Match3DemoController
+--- !u!1 &1100
+GameObject:
+  m_ObjectHideFlags: 0
+  m_Name: BoardView
+  m_Component:
+  - component: {fileID: 1101}
+  - component: {fileID: 1102}
+--- !u!4 &1101
+Transform:
+  m_ObjectHideFlags: 0
+  m_GameObject: {fileID: 1100}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+--- !u!114 &1102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_GameObject: {fileID: 1100}
+  m_EditorClassIdentifier: RedSea.Match3.Presentation.BoardView
