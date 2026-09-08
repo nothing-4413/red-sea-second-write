@@ -7,5 +7,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\UnityProject\Assets\Scripts\Core\Match3Core.cs" Link="Match3Core.cs" />
+    <Compile Include="..\UnityProject\Assets\Scripts\Core\Rules\MvpRulePipeline.cs" Link="MvpRulePipeline.cs" />
   </ItemGroup>
 </Project>

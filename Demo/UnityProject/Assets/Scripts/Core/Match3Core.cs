@@ -78,12 +78,12 @@ namespace RedSea.Match3.Core
 
     public class BoardModel
     {
-        public LevelConfig Config { get; private set; } public BoardCell[,] Cells { get; private set; } public SeededRandom InitialRandom { get; private set; } public SeededRandom RefillRandom { get; private set; }
-        public int MovesRemaining; public int Score; public int NextPieceId = 1;
+        public LevelConfig Config { get; private set; } public BoardCell[,] Cells { get; private set; } public SeededRandom InitialRandom { get; private set; } public SeededRandom RefillRandom { get; private set; } public SeededRandom ShuffleRandom { get; private set; }
+        public int MovesRemaining; public int AreaToolsRemaining; public int Score; public int NextPieceId = 1;
         public Dictionary<PieceColor, int> ClearedByColor = Enum.GetValues(typeof(PieceColor)).Cast<PieceColor>().ToDictionary(c => c, c => 0);
         public BoardModel(LevelConfig config, SeededRandom random = null)
         {
-            Config = config; Config.Validate(); InitialRandom = random ?? new SeededRandom(config.Seed); RefillRandom = new SeededRandom(config.Seed ^ 0x5A17); MovesRemaining = config.Moves; Cells = new BoardCell[config.Rows, config.Columns];
+            Config = config; Config.Validate(); InitialRandom = random ?? new SeededRandom(config.Seed); RefillRandom = new SeededRandom(config.Seed ^ 0x5A17); ShuffleRandom = new SeededRandom(config.Seed ^ 0x3C41); MovesRemaining = config.Moves; AreaToolsRemaining = config.AreaToolCount; Cells = new BoardCell[config.Rows, config.Columns];
             for (var r = 0; r < config.Rows; r++) for (var c = 0; c < config.Columns; c++) Cells[r, c] = new BoardCell(new CellPos(r, c));
             foreach (var item in config.Obstacles) Cells[item.Row, item.Column].Obstacle = new Obstacle(ObstacleType.Crate, item.Durability); FillInitial();
         }
@@ -106,7 +106,7 @@ namespace RedSea.Match3.Core
 
     public class ResolveSummary
     {
-        public int TurnId, ScoreDelta, ChainCount, RemainingMoves, DestroyedObstacles; public Dictionary<PieceColor, int> ClearedByColor = new Dictionary<PieceColor, int>(); public string FinalSnapshot;
+        public int TurnId, ScoreDelta, ChainCount, RemainingMoves, RemainingAreaTools, DestroyedObstacles; public Dictionary<PieceColor, int> ClearedByColor = new Dictionary<PieceColor, int>(); public string FinalSnapshot;
     }
 
     public static class MatchFinder
@@ -127,28 +127,29 @@ namespace RedSea.Match3.Core
         public static bool IsAdjacent(CellPos a, CellPos b) { return Math.Abs(a.Row - b.Row) + Math.Abs(a.Column - b.Column) == 1; }
         public static bool CanSwap(BoardModel board, CellPos from, CellPos to)
         {
-            if (!board.Config.IsInBounds(from) || !board.Config.IsInBounds(to) || !IsAdjacent(from, to)) return false; var a = board.Cell(from); var b = board.Cell(to); if (a.Piece == null || b.Piece == null || a.Obstacle != null || b.Obstacle != null || !a.Piece.Equals(a.Piece)) return false;
+            if (!board.Config.IsInBounds(from) || !board.Config.IsInBounds(to) || !IsAdjacent(from, to)) return false; var a = board.Cell(from); var b = board.Cell(to); if (a.Piece == null || b.Piece == null || a.Obstacle != null || b.Obstacle != null) return false;
             var temp = a.Piece; a.Piece = b.Piece; b.Piece = temp; var valid = MatchFinder.Find(board).Count > 0; temp = a.Piece; a.Piece = b.Piece; b.Piece = temp; return valid;
         }
     }
 
     public class BoardState
     {
-        public Piece[,] Pieces; public Obstacle[,] Obstacles; public int Moves, Score, NextPieceId; public uint RandomState; public int RandomIndex; public Dictionary<PieceColor, int> Cleared;
+        public Piece[,] Pieces; public Obstacle[,] Obstacles; public int Moves, AreaTools, Score, NextPieceId; public uint RandomState, ShuffleState; public int RandomIndex, ShuffleIndex; public Dictionary<PieceColor, int> Cleared;
         public static BoardState Capture(BoardModel board)
         {
-            var state = new BoardState { Pieces = new Piece[board.Config.Rows, board.Config.Columns], Obstacles = new Obstacle[board.Config.Rows, board.Config.Columns], Moves = board.MovesRemaining, Score = board.Score, NextPieceId = board.NextPieceId, RandomState = board.RefillRandom.State, RandomIndex = board.RefillRandom.Index, Cleared = new Dictionary<PieceColor, int>(board.ClearedByColor) };
+            var state = new BoardState { Pieces = new Piece[board.Config.Rows, board.Config.Columns], Obstacles = new Obstacle[board.Config.Rows, board.Config.Columns], Moves = board.MovesRemaining, AreaTools = board.AreaToolsRemaining, Score = board.Score, NextPieceId = board.NextPieceId, RandomState = board.RefillRandom.State, RandomIndex = board.RefillRandom.Index, ShuffleState = board.ShuffleRandom.State, ShuffleIndex = board.ShuffleRandom.Index, Cleared = new Dictionary<PieceColor, int>(board.ClearedByColor) };
             for (var r = 0; r < board.Config.Rows; r++) for (var c = 0; c < board.Config.Columns; c++) { state.Pieces[r, c] = board.Cells[r, c].Piece == null ? null : board.Cells[r, c].Piece.Clone(); state.Obstacles[r, c] = board.Cells[r, c].Obstacle == null ? null : board.Cells[r, c].Obstacle.Clone(); } return state;
         }
         public void Restore(BoardModel board)
         {
             for (var r = 0; r < board.Config.Rows; r++) for (var c = 0; c < board.Config.Columns; c++) { board.Cells[r, c].Piece = Pieces[r, c] == null ? null : Pieces[r, c].Clone(); board.Cells[r, c].Obstacle = Obstacles[r, c] == null ? null : Obstacles[r, c].Clone(); }
-            board.MovesRemaining = Moves; board.Score = Score; board.NextPieceId = NextPieceId; board.RefillRandom.Restore(RandomState, RandomIndex); board.ClearedByColor.Clear(); foreach (var pair in Cleared) board.ClearedByColor[pair.Key] = pair.Value;
+            board.MovesRemaining = Moves; board.AreaToolsRemaining = AreaTools; board.Score = Score; board.NextPieceId = NextPieceId; board.RefillRandom.Restore(RandomState, RandomIndex); board.ShuffleRandom.Restore(ShuffleState, ShuffleIndex); board.ClearedByColor.Clear(); foreach (var pair in Cleared) board.ClearedByColor[pair.Key] = pair.Value;
         }
     }
 
     public class ResolveResult { public bool IsValid; public List<ResolveEvent> Events = new List<ResolveEvent>(); public ResolveSummary Summary; }
 
+    [Obsolete("Use MvpRulePipeline through TurnResolver.")]
     public static class ResolveSystem
     {
         public static ResolveResult Swap(BoardModel board, CellPos from, CellPos to, int turnId)

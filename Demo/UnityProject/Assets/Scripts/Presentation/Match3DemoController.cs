@@ -10,16 +10,16 @@ namespace RedSea.Match3.Presentation
     public sealed class Match3DemoController : MonoBehaviour
     {
         public LevelConfigAsset levelConfig; public BoardView boardView; public float eventDelay = 0.06f;
-        private BoardModel board; private TurnResolver resolver; private readonly TurnStateMachine stateMachine = new TurnStateMachine(); private CellPos? selected; private int turnId; private int areaTools; private string toast = "点击两个相邻糖果开始交换"; private ResolveSummary lastSummary; private Font displayFont;
+        private BoardModel board; private TurnResolver resolver; private readonly TurnStateMachine stateMachine = new TurnStateMachine(); private CellPos? selected; private int turnId; private string toast = "点击两个相邻糖果开始交换"; private ResolveSummary lastSummary; private Font displayFont;
         private void Awake() { if (boardView == null) boardView = FindObjectOfType<BoardView>(); displayFont = Resources.Load<Font>("Fonts/display"); stateMachine.StateChanged += state => Debug.Log("[Turn] " + state); Initialize(); }
-        private void Initialize() { stateMachine.Reset(); var config = levelConfig == null ? new LevelConfig() : levelConfig.ToCore(); board = new BoardModel(config); resolver = new TurnResolver(board); areaTools = config.AreaToolCount; boardView.Bind(board); }
+        private void Initialize() { stateMachine.Reset(); var config = levelConfig == null ? new LevelConfig() : levelConfig.ToCore(); board = new BoardModel(config); resolver = new TurnResolver(board); boardView.Bind(board); }
         private void OnGUI()
         {
             GUI.Label(new Rect(30, 18, 620, 32), "红海二笔 · MATCH-3 ARCHITECTURE DEMO", new GUIStyle(GUI.skin.label) { font = displayFont, fontSize = 22, fontStyle = FontStyle.Bold });
             GUI.Label(new Rect(700, 22, 500, 28), "STATE: " + stateMachine.State + "   TURN: " + turnId + "   SEED: " + board?.RefillRandom.State);
             GUI.Label(new Rect(700, 58, 500, 28), "MOVES " + board?.MovesRemaining + "   SCORE " + board?.Score + "   RED GOAL " + GoalProgress());
             GUI.Label(new Rect(700, 94, 540, 44), toast);
-            if (GUI.Button(new Rect(700, 150, 180, 48), "5×5 道具 (" + areaTools + ")")) UseAreaTool();
+            if (GUI.Button(new Rect(700, 150, 180, 48), "5×5 道具 (" + board.AreaToolsRemaining + ")")) UseAreaTool();
             if (GUI.Button(new Rect(900, 150, 130, 48), "重开")) Restart();
             if (GUI.Button(new Rect(1050, 150, 130, 48), "回放固定操作")) StartCoroutine(Replay());
             boardView.Draw(selected); HandleInput();
@@ -32,7 +32,7 @@ namespace RedSea.Match3.Presentation
         }
         private void SubmitSwap(CellPos from, CellPos to) { stateMachine.BeginResolve(); var result = resolver.SubmitSwap(from, to, ++turnId); selected = null; if (!result.IsValid) { stateMachine.ReturnToIdle(); toast = "无效交换：已完整回滚，步数与随机流不变"; return; } lastSummary = result.Summary; stateMachine.BeginAnimation(); StartCoroutine(ConsumeEvents()); }
         private IEnumerator ConsumeEvents() { while (resolver.TryConsume(out var item)) { yield return new WaitForSeconds(eventDelay); Debug.Log("[Event] " + item.EventType + " turn=" + item.TurnId + " depth=" + item.ChainDepth); } stateMachine.BeginRefill(); stateMachine.CheckChain(); yield return null; if (board.MovesRemaining <= 0) stateMachine.Finish(GameState.Lose); else if (GoalProgress() >= board.Config.GoalCount) stateMachine.Finish(GameState.Win); else stateMachine.ReturnToIdle(); toast = "棋盘稳定，输入已解锁"; }
-        private void UseAreaTool() { if (areaTools <= 0 || stateMachine.InputLocked) { toast = "道具不可用"; return; } var center = selected ?? new CellPos(board.Config.Rows / 2, board.Config.Columns / 2); stateMachine.Enter(GameState.Resolving); var result = resolver.SubmitAreaTool(center, ++turnId); if (!result.IsValid) { stateMachine.ReturnToIdle(); toast = "道具目标无效"; return; } areaTools--; lastSummary = result.Summary; stateMachine.BeginAnimation(); StartCoroutine(ConsumeEvents()); }
+        private void UseAreaTool() { if (board.AreaToolsRemaining <= 0 || stateMachine.InputLocked) { toast = "道具不可用"; return; } var center = selected ?? new CellPos(board.Config.Rows / 2, board.Config.Columns / 2); stateMachine.Enter(GameState.Resolving); var result = resolver.SubmitAreaTool(center, ++turnId); if (!result.IsValid) { stateMachine.ReturnToIdle(); toast = "道具目标无效"; return; } lastSummary = result.Summary; stateMachine.BeginAnimation(); StartCoroutine(ConsumeEvents()); }
         private int GoalProgress() { return board == null ? 0 : board.ClearedByColor[board.Config.GoalColor]; }
         private void Restart() { StopAllCoroutines(); selected = null; lastSummary = null; Initialize(); toast = "已重开，固定 seed=" + board.Config.Seed; }
         private IEnumerator Replay() { Restart(); yield return new WaitForSeconds(0.2f); if (resolver.TryFindLegalMove(out var from, out var to)) SubmitSwap(from, to); else toast = "回放失败：规则层未找到合法交换"; }

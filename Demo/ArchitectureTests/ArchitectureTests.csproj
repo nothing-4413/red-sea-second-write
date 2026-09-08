@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\UnityProject\Assets\Scripts\Core\Match3Core.cs" Link="Match3Core.cs" />
+    <Compile Include="..\UnityProject\Assets\Scripts\Core\Rules\MvpRulePipeline.cs" Link="MvpRulePipeline.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Architecture\EventQueue.cs" Link="EventQueue.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Architecture\GoalSystem.cs" Link="GoalSystem.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Architecture\ReplayRecord.cs" Link="ReplayRecord.cs" />

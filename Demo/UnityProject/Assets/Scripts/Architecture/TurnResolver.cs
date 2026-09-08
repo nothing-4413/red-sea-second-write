@@ -1,4 +1,5 @@
 using RedSea.Match3.Core;
+using RedSea.Match3.Core.Rules;
 
 namespace RedSea.Match3.Architecture
 {
@@ -18,14 +19,14 @@ namespace RedSea.Match3.Architecture
 
         public ResolveResult SubmitSwap(CellPos from, CellPos to, int turnId)
         {
-            var result = ResolveSystem.Swap(Board, from, to, turnId);
+            var result = MvpRulePipeline.ResolveSwap(Board, from, to, turnId);
             if (!result.IsValid) return result;
             Events.EnqueueRange(result.Events); Replay.Inputs.Add(new ReplayInput(from, to)); Replay.Summaries.Add(result.Summary); return result;
         }
 
         public ResolveResult SubmitAreaTool(CellPos center, int turnId)
         {
-            var result = ResolveSystem.AreaTool(Board, center, turnId);
+            var result = MvpRulePipeline.ResolveAreaTool(Board, center, turnId);
             if (!result.IsValid) return result;
             Events.EnqueueRange(result.Events); Replay.Summaries.Add(result.Summary); return result;
         }
