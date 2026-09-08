@@ -104,6 +104,8 @@ static class Program
         Check("resolver depends on injectable rule contract", recordingRules.SwapCalls == 1 && recordingRules.ToolCalls == 1 && injectedResolver.Events.Count == 2);
         var error = injectedResolver.CaptureError(GameErrorType.StateMachine, "test timeout", GameState.Animating, 6);
         Check("error snapshot captures turn state and board context", error.ErrorType == GameErrorType.StateMachine && error.State == GameState.Animating && error.TurnId == 6 && error.Seed == validConfig.Seed && error.BoardSnapshot == injectedResolver.Board.Snapshot());
+        var invalidLimitConfig = new LevelConfig { MaxInitialGenerationAttempts = 0 };
+        try { invalidLimitConfig.Validate(); Check("invalid initial generation limit rejected", false); } catch (InvalidOperationException) { Check("invalid initial generation limit rejected", true); }
         Console.WriteLine($"ARCHITECTURE CONTRACT TESTS PASSED: {passed}");
     }
 }

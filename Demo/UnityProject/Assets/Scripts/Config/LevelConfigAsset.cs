@@ -11,7 +11,7 @@ namespace RedSea.Match3.Config
         [Min(0)] public int moves = 24, areaToolCount = 2;
         public int seed = 202603;
         public PieceColor[] colors = { PieceColor.Red, PieceColor.Blue, PieceColor.Green, PieceColor.Yellow, PieceColor.Purple };
-        [Min(1)] public int maxChainDepth = 20, maxEvents = 500, maxShuffleAttempts = 8;
+        [Min(1)] public int maxChainDepth = 20, maxEvents = 500, maxShuffleAttempts = 8, maxInitialGenerationAttempts = 100;
         public bool enableShuffle = true;
         public bool enableRocket, enableBomb, enableFlyingBomb, enableColorBomb, enableSpecialCombo;
         public PieceColor goalColor = PieceColor.Red;
@@ -19,7 +19,7 @@ namespace RedSea.Match3.Config
         public List<ObstacleDefinition> obstacles = new List<ObstacleDefinition> { new ObstacleDefinition(3, 4, 2), new ObstacleDefinition(5, 4, 1) };
         public LevelConfig ToCore()
         {
-            return new LevelConfig { Rows = rows, Columns = columns, Moves = moves, AreaToolCount = areaToolCount, Seed = seed, Colors = colors == null ? null : (PieceColor[])colors.Clone(), MaxChainDepth = maxChainDepth, MaxEvents = maxEvents, MaxShuffleAttempts = maxShuffleAttempts, EnableShuffle = enableShuffle, EnableRocket = enableRocket, EnableBomb = enableBomb, EnableFlyingBomb = enableFlyingBomb, EnableColorBomb = enableColorBomb, EnableSpecialCombo = enableSpecialCombo, GoalColor = goalColor, GoalCount = goalCount, Obstacles = new List<ObstacleDefinition>(obstacles) };
+            return new LevelConfig { Rows = rows, Columns = columns, Moves = moves, AreaToolCount = areaToolCount, Seed = seed, Colors = colors == null ? null : (PieceColor[])colors.Clone(), MaxChainDepth = maxChainDepth, MaxEvents = maxEvents, MaxShuffleAttempts = maxShuffleAttempts, MaxInitialGenerationAttempts = maxInitialGenerationAttempts, EnableShuffle = enableShuffle, EnableRocket = enableRocket, EnableBomb = enableBomb, EnableFlyingBomb = enableFlyingBomb, EnableColorBomb = enableColorBomb, EnableSpecialCombo = enableSpecialCombo, GoalColor = goalColor, GoalCount = goalCount, Obstacles = new List<ObstacleDefinition>(obstacles) };
         }
     }
 }

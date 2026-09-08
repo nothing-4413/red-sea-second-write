@@ -16,6 +16,7 @@ static class Test
     static void Main()
     {
         var generatedA = new BoardModel(new LevelConfig(), new SeededRandom(123)); var generatedB = new BoardModel(new LevelConfig(), new SeededRandom(123)); Check("initial board stable", MatchFinder.Find(generatedA).Count == 0 && generatedA.HasLegalMove()); Check("initial seed deterministic", generatedA.Snapshot() == generatedB.Snapshot());
+        var limitedConfig = new LevelConfig { Rows = 5, Columns = 5, MaxInitialGenerationAttempts = 2, Obstacles = new List<ObstacleDefinition>() }; Check("initial generation limit is configurable", limitedConfig.MaxInitialGenerationAttempts == 2);
         var board = Board(new[] { "RRRBB", "GPGYP", "YGBRG", "PBRYG", "BGYPB" });
         Check("horizontal match", MatchFinder.Find(board).Count == 3);
         board = Board(new[] { "RBGYP", "GRRBR", "YPGGB", "BRYGP", "GYPRB" }, new LevelConfig { Rows = 5, Columns = 5, Moves = 10, Obstacles = new List<ObstacleDefinition>() });

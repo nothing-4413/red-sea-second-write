@@ -36,13 +36,13 @@ namespace RedSea.Match3.Core
         public int Rows = 9, Columns = 9, Moves = 24, AreaToolCount = 2, Seed = 202603;
         public PieceColor[] Colors = { PieceColor.Red, PieceColor.Blue, PieceColor.Green, PieceColor.Yellow, PieceColor.Purple };
         public PieceColor GoalColor = PieceColor.Red; public int GoalCount = 18;
-        public int MaxChainDepth = 20, MaxEvents = 500, MaxShuffleAttempts = 8;
+        public int MaxChainDepth = 20, MaxEvents = 500, MaxShuffleAttempts = 8, MaxInitialGenerationAttempts = 100;
         public bool EnableRocket, EnableBomb, EnableFlyingBomb, EnableColorBomb, EnableSpecialCombo, EnableShuffle = true;
         public List<ObstacleDefinition> Obstacles = new List<ObstacleDefinition> { new ObstacleDefinition(3, 4, 2), new ObstacleDefinition(5, 4, 1) };
         public bool IsInBounds(CellPos pos) { return pos.Row >= 0 && pos.Row < Rows && pos.Column >= 0 && pos.Column < Columns; }
         public void Validate()
         {
-            if (Rows <= 0 || Columns <= 0 || Colors == null || Colors.Length < 3 || Moves < 0) throw new InvalidOperationException("Invalid LevelConfig dimensions, colors or moves.");
+            if (Rows <= 0 || Columns <= 0 || Colors == null || Colors.Length < 3 || Moves < 0 || MaxChainDepth <= 0 || MaxEvents <= 0 || MaxShuffleAttempts <= 0 || MaxInitialGenerationAttempts <= 0) throw new InvalidOperationException("Invalid LevelConfig dimensions, colors, moves or safety limits.");
             var seen = new HashSet<CellPos>(); foreach (var item in Obstacles) { var pos = new CellPos(item.Row, item.Column); if (!IsInBounds(pos) || item.Durability <= 0 || !seen.Add(pos)) throw new InvalidOperationException("Invalid obstacle definition."); }
         }
     }
@@ -90,7 +90,7 @@ namespace RedSea.Match3.Core
         public BoardCell Cell(CellPos pos) { return Config.IsInBounds(pos) ? Cells[pos.Row, pos.Column] : null; }
         public IEnumerable<CellPos> Neighbors(CellPos pos) { return new[] { new CellPos(pos.Row - 1, pos.Column), new CellPos(pos.Row + 1, pos.Column), new CellPos(pos.Row, pos.Column - 1), new CellPos(pos.Row, pos.Column + 1) }.Where(Config.IsInBounds); }
         public Piece CreatePiece(PieceColor color, CellPos pos) { return new Piece(NextPieceId++, color, pos); }
-        public void FillInitial() { for (var attempt = 0; attempt < 100; attempt++) { for (var r = 0; r < Config.Rows; r++) for (var c = 0; c < Config.Columns; c++) if (Cells[r, c].Obstacle == null) Cells[r, c].Piece = CreatePiece(Config.Colors[InitialRandom.Next(Config.Colors.Length)], new CellPos(r, c)); if (MatchFinder.Find(this).Count == 0 && HasLegalMove()) return; } throw new InvalidOperationException("Unable to generate a stable board with a legal move."); } public bool HasLegalMove() { for (var r = 0; r < Config.Rows; r++) for (var c = 0; c < Config.Columns; c++) { var from = new CellPos(r, c); foreach (var to in Neighbors(from)) if (SwapValidator.CanSwap(this, from, to)) return true; } return false; }
+        public void FillInitial() { for (var attempt = 0; attempt < Config.MaxInitialGenerationAttempts; attempt++) { for (var r = 0; r < Config.Rows; r++) for (var c = 0; c < Config.Columns; c++) if (Cells[r, c].Obstacle == null) Cells[r, c].Piece = CreatePiece(Config.Colors[InitialRandom.Next(Config.Colors.Length)], new CellPos(r, c)); if (MatchFinder.Find(this).Count == 0 && HasLegalMove()) return; } throw new InvalidOperationException("Unable to generate a stable board with a legal move."); } public bool HasLegalMove() { for (var r = 0; r < Config.Rows; r++) for (var c = 0; c < Config.Columns; c++) { var from = new CellPos(r, c); foreach (var to in Neighbors(from)) if (SwapValidator.CanSwap(this, from, to)) return true; } return false; }
         public string Snapshot()
         {
             var lines = new List<string>(); for (var r = 0; r < Config.Rows; r++) { var chars = new char[Config.Columns]; for (var c = 0; c < Config.Columns; c++) chars[c] = Cells[r, c].Obstacle != null ? 'X' : Cells[r, c].Piece == null ? '.' : ToChar(Cells[r, c].Piece.Color); lines.Add(new string(chars)); } return string.Join("\n", lines);

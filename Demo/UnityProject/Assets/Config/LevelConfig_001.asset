@@ -25,6 +25,7 @@ MonoBehaviour:
   maxChainDepth: 20
   maxEvents: 500
   maxShuffleAttempts: 8
+  maxInitialGenerationAttempts: 100
   enableShuffle: 1
   enableRocket: 0
   enableBomb: 0
