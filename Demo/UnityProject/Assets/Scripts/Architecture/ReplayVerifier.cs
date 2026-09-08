@@ -19,8 +19,9 @@ namespace RedSea.Match3.Architecture
             if (!record.IsCompatible(ReplayRecord.RuleVersion)) return Failure(-1, "Replay rule version is incompatible.");
             if (record.Summaries.Count != record.Inputs.Count) return Failure(-1, "Replay input and summary counts differ.");
 
-            config.Seed = record.Seed;
-            var resolver = new TurnResolver(new BoardModel(config));
+            var replayConfig = config.Clone();
+            replayConfig.Seed = record.Seed;
+            var resolver = new TurnResolver(new BoardModel(replayConfig));
             if (!RestoreSnapshot(resolver.Board, record.InitialSnapshot)) return Failure(-1, "Initial board snapshot is invalid.");
             resolver.Board.RefillRandom.Restore(resolver.Board.RefillRandom.State, record.InitialRefillRandomIndex);
             resolver.Board.ShuffleRandom.Restore(resolver.Board.ShuffleRandom.State, record.InitialShuffleRandomIndex);
@@ -48,7 +49,15 @@ namespace RedSea.Match3.Architecture
                 actual.RemainingMoves == expected.RemainingMoves &&
                 actual.RemainingAreaTools == expected.RemainingAreaTools &&
                 actual.DestroyedObstacles == expected.DestroyedObstacles &&
+                SameColorCounts(actual, expected) &&
                 actual.FinalSnapshot == expected.FinalSnapshot;
+        }
+
+        private static bool SameColorCounts(ResolveSummary actual, ResolveSummary expected)
+        {
+            if (actual.ClearedByColor == null || expected.ClearedByColor == null) return actual.ClearedByColor == expected.ClearedByColor;
+            return actual.ClearedByColor.Count == expected.ClearedByColor.Count &&
+                actual.ClearedByColor.All(pair => expected.ClearedByColor.TryGetValue(pair.Key, out var count) && count == pair.Value);
         }
 
         private static void Drain(TurnResolver resolver)

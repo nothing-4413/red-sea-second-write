@@ -40,6 +40,18 @@ namespace RedSea.Match3.Core
         public bool EnableRocket, EnableBomb, EnableFlyingBomb, EnableColorBomb, EnableSpecialCombo, EnableShuffle = true;
         public List<ObstacleDefinition> Obstacles = new List<ObstacleDefinition> { new ObstacleDefinition(3, 4, 2), new ObstacleDefinition(5, 4, 1) };
         public bool IsInBounds(CellPos pos) { return pos.Row >= 0 && pos.Row < Rows && pos.Column >= 0 && pos.Column < Columns; }
+        public LevelConfig Clone()
+        {
+            return new LevelConfig
+            {
+                Rows = Rows, Columns = Columns, Moves = Moves, AreaToolCount = AreaToolCount, Seed = Seed,
+                Colors = Colors == null ? null : Colors.ToArray(),
+                GoalColor = GoalColor, GoalCount = GoalCount,
+                MaxChainDepth = MaxChainDepth, MaxEvents = MaxEvents, MaxShuffleAttempts = MaxShuffleAttempts, MaxInitialGenerationAttempts = MaxInitialGenerationAttempts,
+                EnableRocket = EnableRocket, EnableBomb = EnableBomb, EnableFlyingBomb = EnableFlyingBomb, EnableColorBomb = EnableColorBomb, EnableSpecialCombo = EnableSpecialCombo, EnableShuffle = EnableShuffle,
+                Obstacles = Obstacles == null ? null : Obstacles.Select(item => new ObstacleDefinition(item.Row, item.Column, item.Durability)).ToList()
+            };
+        }
         public void Validate()
         {
             if (Rows <= 0 || Columns <= 0 || Colors == null || Colors.Length < 3 || Moves < 0 || MaxChainDepth <= 0 || MaxEvents <= 0 || MaxShuffleAttempts <= 0 || MaxInitialGenerationAttempts <= 0) throw new InvalidOperationException("Invalid LevelConfig dimensions, colors, moves or safety limits.");

@@ -79,7 +79,13 @@ static class Program
         while (validResolver.TryConsume(out var consumed)) consumedEvents.Add(consumed);
         Check("resolver queues complete result in FIFO order", consumedEvents.Count == expectedEvents.Count && consumedEvents.Select(item => item.EventType).SequenceEqual(expectedEvents.Select(item => item.EventType)));
         Check("resolver replay records committed turn", validResolver.Replay.Inputs.Count == 1 && validResolver.Replay.Summaries.Count == 1 && validResolver.Replay.Summaries[0].TurnId == 1);
+        var originalSeed = validConfig.Seed;
         Check("replay verifier reproduces committed swap", ReplayVerifier.Verify(validConfig, validResolver.Replay).IsMatch);
+        Check("replay verifier does not mutate input config", validConfig.Seed == originalSeed);
+        var configCopy = validConfig.Clone();
+        configCopy.Colors[0] = PieceColor.Purple;
+        if (configCopy.Obstacles.Count > 0) configCopy.Obstacles[0].Durability++;
+        Check("level config clone owns mutable collections", validConfig.Colors[0] == PieceColor.Red && (validConfig.Obstacles.Count == 0 || configCopy.Obstacles[0].Durability != validConfig.Obstacles[0].Durability));
 
         var invalidResolver = new TurnResolver(Board(new[] { "RBGYP", "GBRYR", "YPGGB", "BRYGP", "GYPRB" }, validConfig));
         var invalidBefore = invalidResolver.Board.Snapshot();
