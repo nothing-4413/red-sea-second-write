@@ -23,6 +23,8 @@
 
 规则主流程固定为：Input → TurnStateMachine → TurnResolver → SwapValidator → MvpRulePipeline → ShuffleSystem（无合法移动时）→ EventQueue → Presentation → Goal/Score → Idle/Win/Lose。
 
+ArchitectureTests 还验证了 TurnResolver 的有效/非法交换提交、FIFO 事件入队与消费、回放摘要记录，以及范围道具不消耗步数。
+
 MVP 开启普通三连、确定性补充、障碍物和 5×5 道具；Rocket/Bomb/FlyingBomb/ColorBomb/SpecialCombo 仅保留枚举和配置开关，默认关闭。
 
 规则主流程固定为：`Input → TurnStateMachine → TurnResolver → SwapValidator → MvpRulePipeline → EventQueue → Presentation → Goal/Score → Idle/Win/Lose`。
