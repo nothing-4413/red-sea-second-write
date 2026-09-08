@@ -23,6 +23,7 @@ namespace RedSea.Match3.Core
         public static bool operator !=(CellPos a, CellPos b) { return !a.Equals(b); }
     }
 
+    [Serializable]
     public class ObstacleDefinition
     {
         public int Row; public int Column; public int Durability;

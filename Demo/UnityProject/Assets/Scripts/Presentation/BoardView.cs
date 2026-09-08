@@ -20,15 +20,15 @@ namespace RedSea.Match3.Presentation
             candyTextures[PieceColor.Purple] = Resources.Load<Texture2D>("Art/candy-purple");
             crateTexture = Resources.Load<Texture2D>("Art/obstacle-crate"); tileTexture = Resources.Load<Texture2D>("Art/tile");
         }
-        public CellPos? HitTest(Vector2 screenPosition)
+        public CellPos? HitTest(Vector2 guiPosition)
         {
-            var origin = new Vector2(30f, Screen.height - 90f - board.Config.Rows * cellSize); var x = Mathf.FloorToInt((screenPosition.x - origin.x) / cellSize); var y = Mathf.FloorToInt((screenPosition.y - origin.y) / cellSize); var row = board.Config.Rows - 1 - y;
+            var origin = new Vector2(30f, 90f); var x = Mathf.FloorToInt((guiPosition.x - origin.x) / cellSize); var y = Mathf.FloorToInt((guiPosition.y - origin.y) / cellSize); var row = y;
             var pos = new CellPos(row, x); return board.Config.IsInBounds(pos) ? pos : (CellPos?)null;
         }
         public void Draw(CellPos? selected)
         {
-            if (board == null) return; var origin = new Vector2(30f, Screen.height - 90f - board.Config.Rows * cellSize);
-            for (var row = 0; row < board.Config.Rows; row++) for (var column = 0; column < board.Config.Columns; column++) { var pos = new CellPos(row, column); var rect = new Rect(origin.x + column * cellSize, origin.y + (board.Config.Rows - 1 - row) * cellSize, cellSize - 3f, cellSize - 3f); GUI.DrawTexture(rect, tileTexture, ScaleMode.StretchToFill); var cell = board.Cell(pos); if (cell.Obstacle != null) GUI.DrawTexture(rect, crateTexture, ScaleMode.ScaleToFit); else if (cell.Piece != null) { GUI.DrawTexture(rect, candyTextures[cell.Piece.Color], ScaleMode.ScaleToFit); GUI.Label(rect, ColorLetter(cell.Piece.Color), new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontSize = 16, normal = { textColor = Color.white } }); } if (selected.HasValue && selected.Value == pos) GUI.Box(rect, GUIContent.none); }
+            if (board == null) return; var origin = new Vector2(30f, 90f);
+            for (var row = 0; row < board.Config.Rows; row++) for (var column = 0; column < board.Config.Columns; column++) { var pos = new CellPos(row, column); var rect = new Rect(origin.x + column * cellSize, origin.y + row * cellSize, cellSize - 3f, cellSize - 3f); GUI.DrawTexture(rect, tileTexture, ScaleMode.StretchToFill); var cell = board.Cell(pos); if (cell.Obstacle != null) GUI.DrawTexture(rect, crateTexture, ScaleMode.ScaleToFit); else if (cell.Piece != null) { GUI.DrawTexture(rect, candyTextures[cell.Piece.Color], ScaleMode.ScaleToFit); GUI.Label(rect, ColorLetter(cell.Piece.Color), new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontSize = 16, normal = { textColor = Color.white } }); } if (selected.HasValue && selected.Value == pos) GUI.Box(rect, GUIContent.none); }
         }
         private static string ColorLetter(PieceColor color) { return color == PieceColor.Red ? "R" : color == PieceColor.Blue ? "B" : color == PieceColor.Green ? "G" : color == PieceColor.Yellow ? "Y" : "P"; }
     }

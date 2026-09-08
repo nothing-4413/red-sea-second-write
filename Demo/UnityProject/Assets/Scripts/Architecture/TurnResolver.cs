@@ -31,6 +31,7 @@ namespace RedSea.Match3.Architecture
         }
 
         public bool TryConsume(out ResolveEvent item) { return Events.TryDequeue(out item); }
+        public bool TryFindLegalMove(out CellPos from, out CellPos to) { for (var row = 0; row < Board.Config.Rows; row++) for (var column = 0; column < Board.Config.Columns; column++) { var candidate = new CellPos(row, column); foreach (var neighbor in Board.Neighbors(candidate)) if (SwapValidator.CanSwap(Board, candidate, neighbor)) { from = candidate; to = neighbor; return true; } } from = new CellPos(); to = new CellPos(); return false; }
         public GameState EvaluateEndState() { return Goals.IsCompleted(Board) ? GameState.Win : Goals.IsFailed(Board) ? GameState.Lose : GameState.Idle; }
     }
 }
