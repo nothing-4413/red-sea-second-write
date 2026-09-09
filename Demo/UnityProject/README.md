@@ -19,6 +19,8 @@
 
 每个已提交回合在 Unity Console 输出一条 `[Performance]` 日志，分别记录总逻辑、匹配扫描、特殊规则、消除、下落补充、洗牌和 FIFO 表现播放耗时。MVP 关闭特殊糖果时 `specialMs` 固定为 0；性能数据不写入 `ResolveSummary` 或回放一致性数据。
 
+稳定回合完成后自动保存进度到 `Application.persistentDataPath/Saves/LevelConfig_001.json`，仅包含关卡 ID、配置版本、剩余步数、道具、分数和目标进度；棋盘快照、动画状态、事件队列和暂停状态不写入存档。文件缺失、版本不匹配、字段缺失或数值越界时自动回退默认进度并记录原因。
+
 ## 代码边界
 
 RuleContracts.cs 定义 IRulePipeline 契约和默认适配器；TurnResolver 通过该边界依赖规则，不直接绑定静态实现。

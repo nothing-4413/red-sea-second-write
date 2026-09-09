@@ -14,6 +14,7 @@
     <Compile Include="..\UnityProject\Assets\Scripts\Architecture\EventQueue.cs" Link="EventQueue.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Architecture\ErrorSnapshot.cs" Link="ErrorSnapshot.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Architecture\ErrorSnapshotExporter.cs" Link="ErrorSnapshotExporter.cs" />
+    <Compile Include="..\UnityProject\Assets\Scripts\Architecture\LocalSaveService.cs" Link="LocalSaveService.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Architecture\GoalSystem.cs" Link="GoalSystem.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Architecture\ReplayRecord.cs" Link="ReplayRecord.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Architecture\ReplayVerifier.cs" Link="ReplayVerifier.cs" />

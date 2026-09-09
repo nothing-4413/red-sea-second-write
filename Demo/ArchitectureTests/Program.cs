@@ -161,6 +161,31 @@ static class Program
         }
         var fixedReport = FixedTestScenario.Run();
         Check("test scene fixed scenario runs through production input and resolver", fixedReport.Passed && fixedReport.EventCount > 0 && !string.IsNullOrEmpty(fixedReport.FinalSnapshot));
+        var saveRoot = Path.Combine(Path.GetTempPath(), "redsea-save-tests", Guid.NewGuid().ToString("N"));
+        var savePath = Path.Combine(saveRoot, LocalSaveService.DirectoryName, "LevelConfig_001.json");
+        try
+        {
+            var save = LocalSaveService.Default("LevelConfig_001", "1.0", 24, 2);
+            save.MovesRemaining = 17; save.AreaToolsRemaining = 1; save.Score = 230; save.GoalProgress = 8;
+            var writeResult = LocalSaveService.Save(savePath, save);
+            var loadResult = LocalSaveService.Load(savePath, "LevelConfig_001", "1.0", 24, 2);
+            Check("local save round trip preserves stable progress", writeResult.Success && !loadResult.UsedDefault && loadResult.Data.MovesRemaining == 17 && loadResult.Data.AreaToolsRemaining == 1 && loadResult.Data.Score == 230 && loadResult.Data.GoalProgress == 8);
+            var saveText = File.ReadAllText(savePath);
+            Check("local save excludes transient animation state", !saveText.Contains("boardSnapshot") && !saveText.Contains("eventQueue") && !saveText.Contains("Paused"));
+            File.WriteAllText(savePath, "{\"schemaVersion\":1,\"levelId\":\"LevelConfig_001\",\"configVersion\":\"1.0\",\"movesRemaining\":17}");
+            var missingFieldResult = LocalSaveService.Load(savePath, "LevelConfig_001", "1.0", 24, 2);
+            Check("local save missing fields fall back to defaults", missingFieldResult.UsedDefault && missingFieldResult.Data.MovesRemaining == 24 && missingFieldResult.Data.AreaToolsRemaining == 2);
+            File.WriteAllText(savePath, LocalSaveService.Serialize(new LocalSaveData { LevelId = "Other", ConfigVersion = "1.0", MovesRemaining = 1, AreaToolsRemaining = 0, Score = 1, GoalProgress = 1 }));
+            var wrongLevelResult = LocalSaveService.Load(savePath, "LevelConfig_001", "1.0", 24, 2);
+            Check("local save version or level mismatch falls back", wrongLevelResult.UsedDefault && wrongLevelResult.Data.MovesRemaining == 24);
+            File.WriteAllText(savePath, LocalSaveService.Serialize(new LocalSaveData { LevelId = "LevelConfig_001", ConfigVersion = "1.0", MovesRemaining = -1, AreaToolsRemaining = 0, Score = 0, GoalProgress = 0 }));
+            var invalidValueResult = LocalSaveService.Load(savePath, "LevelConfig_001", "1.0", 24, 2);
+            Check("local save out of range values fall back", invalidValueResult.UsedDefault && invalidValueResult.Data.MovesRemaining == 24);
+        }
+        finally
+        {
+            if (Directory.Exists(saveRoot)) Directory.Delete(saveRoot, true);
+        }
         var pauseMachine = new TurnStateMachine();
         pauseMachine.Select();
         pauseMachine.BeginResolve();
