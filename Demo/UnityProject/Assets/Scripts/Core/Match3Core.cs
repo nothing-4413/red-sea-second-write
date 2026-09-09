@@ -125,24 +125,29 @@ namespace RedSea.Match3.Core
 
     public static class MatchFinder
     {
-        public static List<CellPos> Find(BoardModel board)
+        public static List<CellPos> Find(BoardModel board, TurnPerformanceTrace performance = null)
         {
-            var result = new HashSet<CellPos>();
-            for (var r = 0; r < board.Config.Rows; r++) for (var c = 0; c < board.Config.Columns; c++) { var color = board.Cells[r, c].Piece == null ? (PieceColor?)null : board.Cells[r, c].Piece.Color; if (!color.HasValue) continue;
-                if (c == 0 || board.Cells[r, c - 1].Piece == null || board.Cells[r, c - 1].Piece.Color != color.Value) { var end = c; while (end < board.Config.Columns && board.Cells[r, end].Piece != null && board.Cells[r, end].Piece.Color == color.Value) end++; if (end - c >= 3) for (var x = c; x < end; x++) result.Add(new CellPos(r, x)); }
-                if (r == 0 || board.Cells[r - 1, c].Piece == null || board.Cells[r - 1, c].Piece.Color != color.Value) { var end = r; while (end < board.Config.Rows && board.Cells[end, c].Piece != null && board.Cells[end, c].Piece.Color == color.Value) end++; if (end - r >= 3) for (var x = r; x < end; x++) result.Add(new CellPos(x, c)); }
+            var started = performance == null ? 0L : System.Diagnostics.Stopwatch.GetTimestamp();
+            try
+            {
+                var result = new HashSet<CellPos>();
+                for (var r = 0; r < board.Config.Rows; r++) for (var c = 0; c < board.Config.Columns; c++) { var color = board.Cells[r, c].Piece == null ? (PieceColor?)null : board.Cells[r, c].Piece.Color; if (!color.HasValue) continue;
+                    if (c == 0 || board.Cells[r, c - 1].Piece == null || board.Cells[r, c - 1].Piece.Color != color.Value) { var end = c; while (end < board.Config.Columns && board.Cells[r, end].Piece != null && board.Cells[r, end].Piece.Color == color.Value) end++; if (end - c >= 3) for (var x = c; x < end; x++) result.Add(new CellPos(r, x)); }
+                    if (r == 0 || board.Cells[r - 1, c].Piece == null || board.Cells[r - 1, c].Piece.Color != color.Value) { var end = r; while (end < board.Config.Rows && board.Cells[end, c].Piece != null && board.Cells[end, c].Piece.Color == color.Value) end++; if (end - r >= 3) for (var x = r; x < end; x++) result.Add(new CellPos(x, c)); }
+                }
+                return result.ToList();
             }
-            return result.ToList();
+            finally { if (performance != null) performance.RecordMatchScan(started); }
         }
     }
 
     public static class SwapValidator
     {
         public static bool IsAdjacent(CellPos a, CellPos b) { return Math.Abs(a.Row - b.Row) + Math.Abs(a.Column - b.Column) == 1; }
-        public static bool CanSwap(BoardModel board, CellPos from, CellPos to)
+        public static bool CanSwap(BoardModel board, CellPos from, CellPos to, TurnPerformanceTrace performance = null)
         {
             if (!board.Config.IsInBounds(from) || !board.Config.IsInBounds(to) || !IsAdjacent(from, to)) return false; var a = board.Cell(from); var b = board.Cell(to); if (a.Piece == null || b.Piece == null || a.Obstacle != null || b.Obstacle != null) return false;
-            var temp = a.Piece; a.Piece = b.Piece; b.Piece = temp; var valid = MatchFinder.Find(board).Count > 0; temp = a.Piece; a.Piece = b.Piece; b.Piece = temp; return valid;
+            var temp = a.Piece; a.Piece = b.Piece; b.Piece = temp; var valid = MatchFinder.Find(board, performance).Count > 0; temp = a.Piece; a.Piece = b.Piece; b.Piece = temp; return valid;
         }
     }
 
@@ -161,7 +166,7 @@ namespace RedSea.Match3.Core
         }
     }
 
-    public class ResolveResult { public bool IsValid; public List<ResolveEvent> Events = new List<ResolveEvent>(); public ResolveSummary Summary; }
+    public class ResolveResult { public bool IsValid; public List<ResolveEvent> Events = new List<ResolveEvent>(); public ResolveSummary Summary; public TurnPerformanceTrace Performance; }
 
     [Obsolete("Use MvpRulePipeline through TurnResolver.")]
     public static class ResolveSystem

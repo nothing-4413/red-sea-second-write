@@ -13,6 +13,8 @@
 
 表现或状态机错误快照导出到 `Application.persistentDataPath/ErrorSnapshots`。文件名包含 UTC 时间、回合编号和错误类型，JSON 内包含规则状态、seed、三路随机游标、事件队列长度和逻辑棋盘快照；导出失败时仍会通过 Unity Error 日志输出同一诊断上下文。
 
+每个已提交回合在 Unity Console 输出一条 `[Performance]` 日志，分别记录总逻辑、匹配扫描、特殊规则、消除、下落补充、洗牌和 FIFO 表现播放耗时。MVP 关闭特殊糖果时 `specialMs` 固定为 0；性能数据不写入 `ResolveSummary` 或回放一致性数据。
+
 ## 代码边界
 
 RuleContracts.cs 定义 IRulePipeline 契约和默认适配器；TurnResolver 通过该边界依赖规则，不直接绑定静态实现。

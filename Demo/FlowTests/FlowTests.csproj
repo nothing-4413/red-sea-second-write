@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\UnityProject\Assets\Scripts\Core\Match3Core.cs" Link="Match3Core.cs" />
+    <Compile Include="..\UnityProject\Assets\Scripts\Core\Diagnostics\TurnPerformanceTrace.cs" Link="TurnPerformanceTrace.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Flow\TurnStateMachine.cs" Link="TurnStateMachine.cs" />
   </ItemGroup>
 </Project>
