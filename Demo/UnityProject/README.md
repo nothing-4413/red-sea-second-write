@@ -11,6 +11,8 @@
 3. 点击相邻糖果提交交换；无效交换会回滚且不扣步数。
 4. 右侧可使用 5×5 范围道具、重开和固定操作回放。
 
+表现或状态机错误快照导出到 `Application.persistentDataPath/ErrorSnapshots`。文件名包含 UTC 时间、回合编号和错误类型，JSON 内包含规则状态、seed、三路随机游标、事件队列长度和逻辑棋盘快照；导出失败时仍会通过 Unity Error 日志输出同一诊断上下文。
+
 ## 代码边界
 
 RuleContracts.cs 定义 IRulePipeline 契约和默认适配器；TurnResolver 通过该边界依赖规则，不直接绑定静态实现。

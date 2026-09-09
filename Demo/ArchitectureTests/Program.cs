@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
 using RedSea.Match3.Architecture;
 using RedSea.Match3.Core;
 using RedSea.Match3.Core.Rules;
@@ -110,6 +112,26 @@ static class Program
         Check("resolver depends on injectable rule contract", recordingRules.SwapCalls == 1 && recordingRules.ToolCalls == 1 && injectedResolver.Events.Count == 2);
         var error = injectedResolver.CaptureError(GameErrorType.StateMachine, "test timeout", GameState.Animating, 6);
         Check("error snapshot captures turn state and board context", error.ErrorType == GameErrorType.StateMachine && error.State == GameState.Animating && error.TurnId == 6 && error.Seed == validConfig.Seed && error.BoardSnapshot == injectedResolver.Board.Snapshot());
+        var escapedError = injectedResolver.CaptureError(GameErrorType.Presentation, "timeout \"after\"\nrefill", GameState.Animating, 7);
+        var serializedError = ErrorSnapshotExporter.Serialize(escapedError);
+        using var errorJson = JsonDocument.Parse(serializedError);
+        Check("error snapshot export contains versioned diagnostic fields", errorJson.RootElement.GetProperty("schemaVersion").GetInt32() == 1 && errorJson.RootElement.GetProperty("errorType").GetString() == "Presentation" && errorJson.RootElement.GetProperty("turnId").GetInt32() == 7 && errorJson.RootElement.GetProperty("boardSnapshot").GetString() == escapedError.BoardSnapshot);
+        Check("error snapshot export escapes diagnostic text", serializedError.Contains("timeout \\\"after\\\"\\nrefill"));
+        Check("error snapshot export failure does not throw", !ErrorSnapshotExporter.TryExport(escapedError, null, out var failedPath, out var exportError) && failedPath == null && !string.IsNullOrEmpty(exportError));
+        var exportRoot = Path.Combine(Path.GetTempPath(), "redsea-error-snapshot-tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            var exportTime = new DateTime(2026, 9, 9, 1, 2, 3, 4, DateTimeKind.Utc);
+            var firstExport = ErrorSnapshotExporter.Export(escapedError, exportRoot, exportTime);
+            var secondExport = ErrorSnapshotExporter.Export(escapedError, exportRoot, exportTime);
+            var exportedBytes = File.ReadAllBytes(firstExport);
+            Check("error snapshot export writes UTF-8 JSON under bounded directory", File.Exists(firstExport) && Path.GetDirectoryName(firstExport) == Path.Combine(exportRoot, ErrorSnapshotExporter.DirectoryName) && File.ReadAllText(firstExport) == serializedError && (exportedBytes.Length < 3 || exportedBytes[0] != 0xef || exportedBytes[1] != 0xbb || exportedBytes[2] != 0xbf));
+            Check("error snapshot export never overwrites same-turn diagnostics", firstExport != secondExport && File.Exists(secondExport));
+        }
+        finally
+        {
+            if (Directory.Exists(exportRoot)) Directory.Delete(exportRoot, true);
+        }
         var invalidLimitConfig = new LevelConfig { MaxInitialGenerationAttempts = 0 };
         try { invalidLimitConfig.Validate(); Check("invalid initial generation limit rejected", false); } catch (InvalidOperationException) { Check("invalid initial generation limit rejected", true); }
         Console.WriteLine($"ARCHITECTURE CONTRACT TESTS PASSED: {passed}");
