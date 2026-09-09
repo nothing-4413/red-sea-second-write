@@ -7,6 +7,7 @@ using RedSea.Match3.Architecture;
 using RedSea.Match3.Core;
 using RedSea.Match3.Core.Rules;
 using RedSea.Match3.Flow;
+using RedSea.Match3.Testing;
 
 sealed class RecordingRulePipeline : IRulePipeline
 {
@@ -158,6 +159,8 @@ static class Program
             for (var click = 0; click < 20; click++) allLocked &= terminalInput.Click(new CellPos(click % 5, (click * 3) % 5)).Type == BoardInputResultType.Locked;
             Check(terminalState.ToString().ToLowerInvariant() + " ignores 20 board clicks without side effects", allLocked && terminalBoard.Snapshot() == terminalSnapshot && terminalBoard.MovesRemaining == terminalMoves && terminalBoard.RefillRandom.Index == terminalRandomIndex && terminalResolver.Events.Count == 0 && terminalResolver.Replay.Inputs.Count == 0 && terminalInput.TurnId == 0);
         }
+        var fixedReport = FixedTestScenario.Run();
+        Check("test scene fixed scenario runs through production input and resolver", fixedReport.Passed && fixedReport.EventCount > 0 && !string.IsNullOrEmpty(fixedReport.FinalSnapshot));
         Console.WriteLine($"ARCHITECTURE CONTRACT TESTS PASSED: {passed}");
     }
 }

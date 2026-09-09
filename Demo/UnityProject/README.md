@@ -7,9 +7,11 @@
 场景默认绑定 Assets/Config/LevelConfig_001.asset；棋盘尺寸、颜色、seed、目标、道具和安全上限从该资产转换到 Core。
 
 1. 使用 Unity 2022.3 LTS 打开 `Demo/UnityProject`。
-2. 打开 `Assets/Scenes/GameScene.unity` 并运行。
+2. 默认从 `Assets/Scenes/BootstrapScene.unity` 运行；它通过场景入口装配 Demo，并跳转到同一套生产表现链。也可直接打开 `Assets/Scenes/GameScene.unity`。
 3. 点击相邻糖果提交交换；无效交换会回滚且不扣步数。
 4. 右侧可使用 5×5 范围道具、重开和固定操作回放。
+
+`Assets/Scenes/TestScene.unity` 是固定测试入口。运行后自动执行固定 seed、固定交换、事件消费、稳定棋盘和终态 20 次点击检查，并在 Unity Console 输出 `[FixedTest] PASS/FAIL`；该入口复用生产 `InputController`、`TurnResolver` 和 `EventQueue`。
 
 表现或状态机错误快照导出到 `Application.persistentDataPath/ErrorSnapshots`。文件名包含 UTC 时间、回合编号和错误类型，JSON 内包含规则状态、seed、三路随机游标、事件队列长度和逻辑棋盘快照；导出失败时仍会通过 Unity Error 日志输出同一诊断上下文。
 
@@ -37,7 +39,7 @@ ArchitectureTests 还验证了 TurnResolver 的有效/非法交换提交、FIFO 
 
 MVP 开启普通三连、确定性补充、障碍物和 5×5 道具；Rocket/Bomb/FlyingBomb/ColorBomb/SpecialCombo 仅保留枚举和配置开关，默认关闭。
 
-规则主流程固定为：`Input → TurnStateMachine → TurnResolver → SwapValidator → MvpRulePipeline → EventQueue → Presentation → Goal/Score → Idle/Win/Lose`。
+场景入口流程固定为：`SceneEntryPoint → DemoBootstrap → (Match3DemoController → BoardView/EffectPlayer) 或 (FixedTestRunner → FixedTestScenario)`。
 
 ## 独立核心测试
 

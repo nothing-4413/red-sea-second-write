@@ -20,5 +20,6 @@
     <Compile Include="..\UnityProject\Assets\Scripts\Architecture\TurnResolver.cs" Link="TurnResolver.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Flow\TurnStateMachine.cs" Link="TurnStateMachine.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Flow\InputController.cs" Link="InputController.cs" />
+    <Compile Include="..\UnityProject\Assets\Scripts\Testing\FixedTestScenario.cs" Link="FixedTestScenario.cs" />
   </ItemGroup>
 </Project>

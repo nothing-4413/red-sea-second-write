@@ -3,4 +3,21 @@
 --- !u!1 &1
 GameObject:
   m_Name: TestScene
-  m_Component: []
+  m_Component:
+  - component: {fileID: 2}
+  - component: {fileID: 3}
+  - component: {fileID: 4}
+--- !u!4 &2
+Transform:
+  m_GameObject: {fileID: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+--- !u!114 &3
+MonoBehaviour:
+  m_GameObject: {fileID: 1}
+  m_Script: {fileID: 11500000, guid: 4f9c3000000000000000000000000012, type: 3}
+  mode: 1
+--- !u!114 &4
+MonoBehaviour:
+  m_GameObject: {fileID: 1}
+  m_Script: {fileID: 11500000, guid: 4f9c3000000000000000000000000014, type: 3}
+  runOnStart: 1
