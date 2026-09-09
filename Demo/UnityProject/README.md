@@ -23,7 +23,8 @@ RuleContracts.cs 定义 IRulePipeline 契约和默认适配器；TurnResolver �
 - `Assets/Scripts/Core/Rules/MvpRulePipeline.cs`：MVP 唯一规则结算入口，编排交换/范围道具、消除、障碍物伤害、下落、补充、连锁和 `ResolveSummary`。
 - `Assets/Scripts/Core/Match3Core.cs` 中的 `ResolveSystem`：兼容遗留入口，已标记 `Obsolete`；新代码不得直接调用。
 - `Assets/Scripts/Flow/TurnStateMachine.cs`：Idle → Selecting → Resolving → Animating → Refilling → CheckingChain → Idle，统一输入锁。
-- `Assets/Scripts/Presentation/Match3DemoController.cs`：提交命令、启动表现播放、更新状态，不直接消费事件或推导规则。
+- `Assets/Scripts/Flow/InputController.cs`：纯 C# 选择状态与输入命令协调器；拥有回合编号，通过 `TurnResolver` 提交交换/道具，终态直接拒绝输入。
+- `Assets/Scripts/Presentation/Match3DemoController.cs`：把鼠标命中坐标交给 InputController、启动表现播放并更新 UI，不直接提交规则命令、消费事件或推导规则。
 - `Assets/Scripts/Presentation/EffectPlayer.cs`：表现事件队列的唯一消费者，按 FIFO 和配置时长顺序播放，并在超时后产生诊断回调。
 - `Assets/Scripts/Presentation/BoardView.cs`：只读取 BoardModel，将逻辑格映射到资源表现，并应用播放器发出的事件提示。
 - `Assets/Scripts/Config/LevelConfigAsset.cs`：ScriptableObject 关卡配置入口。

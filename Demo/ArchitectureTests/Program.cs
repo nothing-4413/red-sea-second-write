@@ -6,6 +6,7 @@ using System.Text.Json;
 using RedSea.Match3.Architecture;
 using RedSea.Match3.Core;
 using RedSea.Match3.Core.Rules;
+using RedSea.Match3.Flow;
 
 sealed class RecordingRulePipeline : IRulePipeline
 {
@@ -134,6 +135,29 @@ static class Program
         }
         var invalidLimitConfig = new LevelConfig { MaxInitialGenerationAttempts = 0 };
         try { invalidLimitConfig.Validate(); Check("invalid initial generation limit rejected", false); } catch (InvalidOperationException) { Check("invalid initial generation limit rejected", true); }
+
+        var inputBoard = Board(new[] { "RBGYP", "GRRBR", "YPGGB", "BRYGP", "GYPRB" }, validConfig);
+        var inputResolver = new TurnResolver(inputBoard);
+        var inputState = new TurnStateMachine();
+        var input = new InputController(inputBoard, inputResolver, inputState);
+        var selection = input.Click(new CellPos(1, 3));
+        var committed = input.Click(new CellPos(1, 4));
+        Check("input controller owns selection and submits through resolver", selection.Type == BoardInputResultType.Selected && committed.Type == BoardInputResultType.SwapCommitted && committed.Resolution.IsValid && input.TurnId == 1 && !input.Selected.HasValue && inputState.State == GameState.Animating);
+
+        foreach (var terminalState in new[] { GameState.Win, GameState.Lose })
+        {
+            var terminalBoard = Board(new[] { "RBGYP", "GRRBR", "YPGGB", "BRYGP", "GYPRB" }, validConfig);
+            var terminalResolver = new TurnResolver(terminalBoard);
+            var terminalMachine = new TurnStateMachine();
+            var terminalInput = new InputController(terminalBoard, terminalResolver, terminalMachine);
+            terminalMachine.Finish(terminalState);
+            var terminalSnapshot = terminalBoard.Snapshot();
+            var terminalMoves = terminalBoard.MovesRemaining;
+            var terminalRandomIndex = terminalBoard.RefillRandom.Index;
+            var allLocked = true;
+            for (var click = 0; click < 20; click++) allLocked &= terminalInput.Click(new CellPos(click % 5, (click * 3) % 5)).Type == BoardInputResultType.Locked;
+            Check(terminalState.ToString().ToLowerInvariant() + " ignores 20 board clicks without side effects", allLocked && terminalBoard.Snapshot() == terminalSnapshot && terminalBoard.MovesRemaining == terminalMoves && terminalBoard.RefillRandom.Index == terminalRandomIndex && terminalResolver.Events.Count == 0 && terminalResolver.Replay.Inputs.Count == 0 && terminalInput.TurnId == 0);
+        }
         Console.WriteLine($"ARCHITECTURE CONTRACT TESTS PASSED: {passed}");
     }
 }

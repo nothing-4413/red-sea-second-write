@@ -18,5 +18,7 @@
     <Compile Include="..\UnityProject\Assets\Scripts\Architecture\ReplayRecord.cs" Link="ReplayRecord.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Architecture\ReplayVerifier.cs" Link="ReplayVerifier.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Architecture\TurnResolver.cs" Link="TurnResolver.cs" />
+    <Compile Include="..\UnityProject\Assets\Scripts\Flow\TurnStateMachine.cs" Link="TurnStateMachine.cs" />
+    <Compile Include="..\UnityProject\Assets\Scripts\Flow\InputController.cs" Link="InputController.cs" />
   </ItemGroup>
 </Project>
