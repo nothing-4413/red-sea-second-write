@@ -17,6 +17,8 @@
 
 表现或状态机错误快照导出到 `Application.persistentDataPath/ErrorSnapshots`。文件名包含 UTC 时间、回合编号和错误类型，JSON 内包含规则状态、seed、三路随机游标、事件队列长度和逻辑棋盘快照；导出失败时仍会通过 Unity Error 日志输出同一诊断上下文。
 
+每次命令进入和规则成功返回时，`TurnResolver` 通过纯 C# `BoardIntegrityValidator` 检查重复 PieceId、Piece.LogicalPos、负障碍物耐久度和稳定棋盘空格。Resolver 保存最近一次稳定快照；发现异常时优先恢复回合前快照，若回合前状态本身已损坏则恢复最近稳定快照，然后清空事件、记录 Rule 错误快照并回到 Idle；规则内部的消除、下落和补充中间态不会触发外部校验。
+
 每个已提交回合在 Unity Console 输出一条 `[Performance]` 日志，分别记录总逻辑、匹配扫描、特殊规则、消除、下落补充、洗牌和 FIFO 表现播放耗时。MVP 关闭特殊糖果时 `specialMs` 固定为 0；性能数据不写入 `ResolveSummary` 或回放一致性数据。
 
 稳定回合完成后自动保存进度到 `Application.persistentDataPath/Saves/LevelConfig_001.json`，仅包含关卡 ID、配置版本、剩余步数、道具、分数和目标进度；棋盘快照、动画状态、事件队列和暂停状态不写入存档。文件缺失、版本不匹配、字段缺失或数值越界时自动回退默认进度并记录原因。

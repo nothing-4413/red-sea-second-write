@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using RedSea.Match3.Architecture;
 using RedSea.Match3.Core;
+using RedSea.Match3.Core.Diagnostics;
 using RedSea.Match3.Core.Rules;
 using RedSea.Match3.Flow;
 using RedSea.Match3.Testing;
@@ -39,6 +40,29 @@ sealed class ThrowingRulePipeline : IRulePipeline
 {
     public ResolveResult ResolveSwap(BoardModel board, CellPos from, CellPos to, int turnId) { board.MovesRemaining = 0; board.RefillRandom.Next(5); throw new InvalidOperationException("injected rule failure"); }
     public ResolveResult ResolveAreaTool(BoardModel board, CellPos center, int turnId) { board.AreaToolsRemaining = 0; throw new InvalidOperationException("injected tool failure"); }
+}
+
+sealed class CorruptingRulePipeline : IRulePipeline
+{
+    private readonly Action<BoardModel> corrupt;
+
+    public CorruptingRulePipeline(Action<BoardModel> corrupt) { this.corrupt = corrupt; }
+
+    public ResolveResult ResolveSwap(BoardModel board, CellPos from, CellPos to, int turnId)
+    {
+        corrupt(board);
+        return new ResolveResult
+        {
+            IsValid = true,
+            Events = new List<ResolveEvent> { new ResolveEvent(ResolveEventType.Swap, turnId) },
+            Summary = new ResolveSummary { TurnId = turnId, FinalSnapshot = board.Snapshot() }
+        };
+    }
+
+    public ResolveResult ResolveAreaTool(BoardModel board, CellPos center, int turnId)
+    {
+        return ResolveSwap(board, center, center, turnId);
+    }
 }
 
 static class Program
@@ -218,6 +242,52 @@ static class Program
         Check("rule exception returns invalid result", recoveryResult.Type == BoardInputResultType.InvalidSwap && !recoveryResult.Resolution.IsValid);
         Check("rule exception restores board and input lifecycle", recoveryBoard.Snapshot() == recoverySnapshot && recoveryBoard.MovesRemaining == recoveryMoves && recoveryBoard.RefillRandom.Index == recoveryRandomIndex && recoveryResolver.Events.Count == 0 && recoveryResolver.Replay.Inputs.Count == 0 && recoveryInput.TurnId == 0);
         Check("rule exception records recoverable error snapshot", recoveryResolver.LastError != null && recoveryResolver.LastError.ErrorType == GameErrorType.Rule && recoveryResolver.LastError.BoardSnapshot == recoverySnapshot && recoveryResolver.LastError.EventQueueCount == 0);
+
+        var integrityConfig = new LevelConfig { Rows = 5, Columns = 5, Moves = 10, Seed = 74, Obstacles = new List<ObstacleDefinition>() };
+        var integrityBoard = new BoardModel(integrityConfig, new SeededRandom(integrityConfig.Seed));
+        Check("healthy board passes integrity validation", BoardIntegrityValidator.Validate(integrityBoard).IsValid);
+        CheckIntegrityRecovery("duplicate piece id", integrityConfig, board => board.Cells[0, 1].Piece.PieceId = board.Cells[0, 0].Piece.PieceId, BoardIntegrityIssueCode.DuplicatePieceId);
+        CheckIntegrityRecovery("piece logical position mismatch", integrityConfig, board => board.Cells[0, 0].Piece.LogicalPos = new CellPos(4, 4), BoardIntegrityIssueCode.PiecePositionMismatch);
+        CheckIntegrityRecovery("negative obstacle durability", new LevelConfig { Rows = 5, Columns = 5, Moves = 10, Seed = 75, Obstacles = new List<ObstacleDefinition> { new ObstacleDefinition(0, 0, 2) } }, board => board.Cells[0, 0].Obstacle.CurrentDurability = -1, BoardIntegrityIssueCode.NegativeObstacleDurability);
+        CheckIntegrityRecovery("unexpected stable-board empty cell", integrityConfig, board => board.Cells[0, 0].Piece = null, BoardIntegrityIssueCode.UnexpectedEmptyCell);
+        CheckPreExistingIntegrityRecovery(integrityConfig);
+        CheckAreaToolIntegrityRecovery(integrityConfig);
         Console.WriteLine($"ARCHITECTURE CONTRACT TESTS PASSED: {passed}");
+    }
+
+    private static void CheckIntegrityRecovery(string name, LevelConfig config, Action<BoardModel> corrupt, BoardIntegrityIssueCode expectedCode)
+    {
+        var board = new BoardModel(config, new SeededRandom(config.Seed));
+        var resolver = new TurnResolver(board, new CorruptingRulePipeline(corrupt));
+        var input = new InputController(board, resolver, new TurnStateMachine());
+        var before = board.Snapshot();
+        var randomIndex = board.RefillRandom.Index;
+        var result = input.SubmitSwap(new CellPos(0, 0), new CellPos(0, 1));
+        var message = resolver.LastError == null ? "" : resolver.LastError.Message;
+        var report = BoardIntegrityValidator.Validate(board);
+        Check(name + " is reported with a structured issue", result.Type == BoardInputResultType.InvalidSwap && resolver.LastError != null && message.Contains(expectedCode.ToString()));
+        Check(name + " restores the stable board and input state", board.Snapshot() == before && board.RefillRandom.Index == randomIndex && resolver.Events.Count == 0 && resolver.Replay.Inputs.Count == 0 && input.TurnId == 0);
+        Check(name + " leaves no post-recovery integrity issue", report.IsValid);
+    }
+
+    private static void CheckPreExistingIntegrityRecovery(LevelConfig config)
+    {
+        var board = new BoardModel(config, new SeededRandom(config.Seed));
+        var resolver = new TurnResolver(board, new RecordingRulePipeline());
+        var input = new InputController(board, resolver, new TurnStateMachine());
+        var stableSnapshot = board.Snapshot();
+        board.Cells[0, 0].Piece = null;
+        var result = input.SubmitSwap(new CellPos(0, 0), new CellPos(0, 1));
+        Check("pre-existing board corruption restores the last stable snapshot", result.Type == BoardInputResultType.InvalidSwap && board.Snapshot() == stableSnapshot && BoardIntegrityValidator.Validate(board).IsValid);
+    }
+
+    private static void CheckAreaToolIntegrityRecovery(LevelConfig config)
+    {
+        var board = new BoardModel(config, new SeededRandom(config.Seed));
+        var resolver = new TurnResolver(board, new CorruptingRulePipeline(item => item.Cells[0, 0].Piece.LogicalPos = new CellPos(4, 4)));
+        var input = new InputController(board, resolver, new TurnStateMachine());
+        var stableSnapshot = board.Snapshot();
+        var result = input.UseAreaTool(new CellPos(0, 0));
+        Check("area tool post-resolution corruption restores the stable snapshot", result.Type == BoardInputResultType.InvalidToolTarget && board.Snapshot() == stableSnapshot && resolver.LastError != null && resolver.LastError.Message.Contains(BoardIntegrityIssueCode.PiecePositionMismatch.ToString()) && BoardIntegrityValidator.Validate(board).IsValid);
     }
 }
