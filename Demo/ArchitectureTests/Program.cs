@@ -161,6 +161,12 @@ static class Program
         }
         var fixedReport = FixedTestScenario.Run();
         Check("test scene fixed scenario runs through production input and resolver", fixedReport.Passed && fixedReport.EventCount > 0 && !string.IsNullOrEmpty(fixedReport.FinalSnapshot));
+        var pauseMachine = new TurnStateMachine();
+        pauseMachine.Select();
+        pauseMachine.BeginResolve();
+        Check("pause state preserves resolving lifecycle", pauseMachine.Pause() && pauseMachine.IsPaused && pauseMachine.InputLocked && pauseMachine.Resume() && pauseMachine.State == GameState.Resolving);
+        pauseMachine.Finish(GameState.Lose);
+        Check("terminal state cannot be paused", !pauseMachine.Pause() && pauseMachine.State == GameState.Lose);
         Console.WriteLine($"ARCHITECTURE CONTRACT TESTS PASSED: {passed}");
     }
 }

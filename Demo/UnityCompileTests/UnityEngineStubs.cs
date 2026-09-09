@@ -24,6 +24,7 @@ namespace UnityEngine
     public class Texture2D : Object { }
     public class Font : Object { }
     public class WaitForSeconds { public WaitForSeconds(float seconds) { } }
+    public static class Time { public static float deltaTime { get { return 1f / 60f; } } }
     public static class Resources { public static T Load<T>(string path) where T : Object { return null; } }
     public static class Debug { public static void Log(object message) { } public static void LogError(object message) { } }
     public static class Application { public static string persistentDataPath { get { return "."; } } }
