@@ -80,13 +80,15 @@ namespace RedSea.Match3.Flow
             if (stateMachine.InputLocked) return Result(BoardInputResultType.Locked);
             if (stateMachine.State == GameState.Idle) stateMachine.Select();
             stateMachine.BeginResolve();
-            var resolution = resolver.SubmitSwap(from, to, ++TurnId);
+            var turn = TurnId + 1;
+            var resolution = resolver.SubmitSwap(from, to, turn);
             Selected = null;
             if (!resolution.IsValid)
             {
                 stateMachine.ReturnToIdle();
                 return Result(BoardInputResultType.InvalidSwap, resolution);
             }
+            TurnId = turn;
             stateMachine.BeginAnimation();
             return Result(BoardInputResultType.SwapCommitted, resolution);
         }
@@ -97,12 +99,14 @@ namespace RedSea.Match3.Flow
             if (board.AreaToolsRemaining <= 0) return Result(BoardInputResultType.ToolUnavailable);
             if (!board.Config.IsInBounds(center)) return Result(BoardInputResultType.InvalidToolTarget);
             stateMachine.Enter(GameState.Resolving);
-            var resolution = resolver.SubmitAreaTool(center, ++TurnId);
+            var turn = TurnId + 1;
+            var resolution = resolver.SubmitAreaTool(center, turn);
             if (!resolution.IsValid)
             {
                 stateMachine.ReturnToIdle();
                 return Result(BoardInputResultType.InvalidToolTarget, resolution);
             }
+            TurnId = turn;
             Selected = null;
             stateMachine.BeginAnimation();
             return Result(BoardInputResultType.ToolCommitted, resolution);

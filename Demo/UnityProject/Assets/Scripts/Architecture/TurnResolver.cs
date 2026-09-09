@@ -21,6 +21,7 @@ namespace RedSea.Match3.Architecture
 
         public ResolveResult SubmitSwap(CellPos from, CellPos to, int turnId)
         {
+            var before = BoardState.Capture(Board);
             try
             {
                 var result = Rules.ResolveSwap(Board, from, to, turnId);
@@ -29,13 +30,13 @@ namespace RedSea.Match3.Architecture
             }
             catch (System.Exception exception)
             {
-                LastError = ErrorReporter.Capture(GameErrorType.Rule, exception.Message, Board, GameState.Resolving, turnId, Events.Count);
-                throw;
+                return RecoverFromRuleError(before, exception, turnId);
             }
         }
 
         public ResolveResult SubmitAreaTool(CellPos center, int turnId)
         {
+            var before = BoardState.Capture(Board);
             try
             {
                 var result = Rules.ResolveAreaTool(Board, center, turnId);
@@ -44,9 +45,16 @@ namespace RedSea.Match3.Architecture
             }
             catch (System.Exception exception)
             {
-                LastError = ErrorReporter.Capture(GameErrorType.Rule, exception.Message, Board, GameState.Resolving, turnId, Events.Count);
-                throw;
+                return RecoverFromRuleError(before, exception, turnId);
             }
+        }
+
+        private ResolveResult RecoverFromRuleError(BoardState before, System.Exception exception, int turnId)
+        {
+            before.Restore(Board);
+            Events.Clear();
+            LastError = ErrorReporter.Capture(GameErrorType.Rule, exception.Message, Board, GameState.Resolving, turnId, Events.Count);
+            return new ResolveResult { IsValid = false };
         }
 
         public ErrorSnapshot CaptureError(GameErrorType type, string message, GameState state, int turnId)

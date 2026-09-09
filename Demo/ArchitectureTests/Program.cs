@@ -35,6 +35,12 @@ sealed class RecordingRulePipeline : IRulePipeline
     }
 }
 
+sealed class ThrowingRulePipeline : IRulePipeline
+{
+    public ResolveResult ResolveSwap(BoardModel board, CellPos from, CellPos to, int turnId) { board.MovesRemaining = 0; board.RefillRandom.Next(5); throw new InvalidOperationException("injected rule failure"); }
+    public ResolveResult ResolveAreaTool(BoardModel board, CellPos center, int turnId) { board.AreaToolsRemaining = 0; throw new InvalidOperationException("injected tool failure"); }
+}
+
 static class Program
 {
     private static int passed;
@@ -201,6 +207,17 @@ static class Program
         Check("result panel model exposes terminal progress", resultModel.Visible && resultModel.State == GameState.Win && resultModel.Score == 120 && resultModel.GoalProgress == 4 && resultModel.GoalTarget == validConfig.GoalCount && resultModel.RemainingMoves == validConfig.Moves);
         resultModel.Update(resultBoard, GameState.Idle);
         Check("result panel model hides during active game", !resultModel.Visible && resultModel.Score == 120);
+        var recoveryConfig = new LevelConfig { Rows = 5, Columns = 5, Moves = 10, AreaToolCount = 1, Seed = 73, Obstacles = new List<ObstacleDefinition>() };
+        var recoveryBoard = Board(new[] { "RBGYP", "GRRBR", "YPGGB", "BRYGP", "GYPRB" }, recoveryConfig);
+        var recoveryResolver = new TurnResolver(recoveryBoard, new ThrowingRulePipeline());
+        var recoveryInput = new InputController(recoveryBoard, recoveryResolver, new TurnStateMachine());
+        var recoverySnapshot = recoveryBoard.Snapshot();
+        var recoveryMoves = recoveryBoard.MovesRemaining;
+        var recoveryRandomIndex = recoveryBoard.RefillRandom.Index;
+        var recoveryResult = recoveryInput.SubmitSwap(new CellPos(1, 3), new CellPos(1, 4));
+        Check("rule exception returns invalid result", recoveryResult.Type == BoardInputResultType.InvalidSwap && !recoveryResult.Resolution.IsValid);
+        Check("rule exception restores board and input lifecycle", recoveryBoard.Snapshot() == recoverySnapshot && recoveryBoard.MovesRemaining == recoveryMoves && recoveryBoard.RefillRandom.Index == recoveryRandomIndex && recoveryResolver.Events.Count == 0 && recoveryResolver.Replay.Inputs.Count == 0 && recoveryInput.TurnId == 0);
+        Check("rule exception records recoverable error snapshot", recoveryResolver.LastError != null && recoveryResolver.LastError.ErrorType == GameErrorType.Rule && recoveryResolver.LastError.BoardSnapshot == recoverySnapshot && recoveryResolver.LastError.EventQueueCount == 0);
         Console.WriteLine($"ARCHITECTURE CONTRACT TESTS PASSED: {passed}");
     }
 }
