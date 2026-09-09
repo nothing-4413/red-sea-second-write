@@ -8,6 +8,7 @@ using RedSea.Match3.Core;
 using RedSea.Match3.Core.Rules;
 using RedSea.Match3.Flow;
 using RedSea.Match3.Testing;
+using RedSea.Match3.Presentation;
 
 sealed class RecordingRulePipeline : IRulePipeline
 {
@@ -192,6 +193,14 @@ static class Program
         Check("pause state preserves resolving lifecycle", pauseMachine.Pause() && pauseMachine.IsPaused && pauseMachine.InputLocked && pauseMachine.Resume() && pauseMachine.State == GameState.Resolving);
         pauseMachine.Finish(GameState.Lose);
         Check("terminal state cannot be paused", !pauseMachine.Pause() && pauseMachine.State == GameState.Lose);
+        var resultModel = new ResultPanelModel();
+        var resultBoard = Board(new[] { "RBGYP", "GRRBR", "YPGGB", "BRYGP", "GYPRB" }, validConfig);
+        resultBoard.Score = 120;
+        resultBoard.ClearedByColor[PieceColor.Red] = 4;
+        resultModel.Update(resultBoard, GameState.Win);
+        Check("result panel model exposes terminal progress", resultModel.Visible && resultModel.State == GameState.Win && resultModel.Score == 120 && resultModel.GoalProgress == 4 && resultModel.GoalTarget == validConfig.GoalCount && resultModel.RemainingMoves == validConfig.Moves);
+        resultModel.Update(resultBoard, GameState.Idle);
+        Check("result panel model hides during active game", !resultModel.Visible && resultModel.Score == 120);
         Console.WriteLine($"ARCHITECTURE CONTRACT TESTS PASSED: {passed}");
     }
 }

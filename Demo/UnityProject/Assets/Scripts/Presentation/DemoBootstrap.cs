@@ -17,9 +17,11 @@ namespace RedSea.Match3.Presentation
             }
             var board = new GameObject("BoardView").AddComponent<BoardView>();
             var effects = new GameObject("EffectPlayer").AddComponent<EffectPlayer>();
+            var results = new GameObject("ResultPanel").AddComponent<ResultPanel>();
             var controller = new GameObject("Match3DemoController").AddComponent<Match3DemoController>();
             controller.boardView = board;
             controller.effectPlayer = effects;
+            controller.resultPanel = results;
         }
     }
 }

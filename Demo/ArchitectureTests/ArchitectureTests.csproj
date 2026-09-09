@@ -22,5 +22,6 @@
     <Compile Include="..\UnityProject\Assets\Scripts\Flow\TurnStateMachine.cs" Link="TurnStateMachine.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Flow\InputController.cs" Link="InputController.cs" />
     <Compile Include="..\UnityProject\Assets\Scripts\Testing\FixedTestScenario.cs" Link="FixedTestScenario.cs" />
+    <Compile Include="..\UnityProject\Assets\Scripts\Presentation\ResultPanelModel.cs" Link="ResultPanelModel.cs" />
   </ItemGroup>
 </Project>
